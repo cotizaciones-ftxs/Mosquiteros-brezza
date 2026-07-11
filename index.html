@@ -1,0 +1,1349 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Extractor HTF Mosquiteros Brezza</title>
+  <style>
+    :root {
+      --bg: #f2f7fb;
+      --panel: #ffffff;
+      --ink: #152331;
+      --muted: #607384;
+      --line: #d5e2ec;
+      --accent: #0b74b8;
+      --accent-dark: #075385;
+      --soft: #e6f3fb;
+      --warn: #986400;
+      --danger: #a7352b;
+      --blue: #0b74b8;
+      --green: #167565;
+      --red: #a82828;
+      --shadow: 0 14px 34px rgba(21, 35, 49, .08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: 0;
+    }
+
+    header {
+      padding: 18px clamp(14px, 3vw, 42px);
+      color: #fff;
+      background: linear-gradient(90deg, #063a63, #0b74b8);
+      border-bottom: 4px solid #58b8ef;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(24px, 3vw, 38px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .subhead {
+      margin: 5px 0 0;
+      color: #d8efff;
+      font-size: 14px;
+    }
+
+    main {
+      width: min(1500px, 100%);
+      margin: 0 auto;
+      padding: 20px clamp(12px, 2.8vw, 36px) 36px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .panel {
+      min-width: 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    .upload {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .filebox {
+      min-height: 58px;
+      border: 1px dashed #a9bfd0;
+      border-radius: 8px;
+      background: #fbfdff;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+    }
+
+    .filebox:hover,
+    .filebox.dragover {
+      border-color: var(--accent);
+      background: var(--soft);
+      box-shadow: 0 0 0 3px rgba(11, 116, 184, .12);
+    }
+
+    input[type="file"] {
+      width: 100%;
+      color: var(--muted);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 9px 13px;
+      border-radius: 6px;
+      color: #fff;
+      background: var(--accent);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .btn.secondary {
+      color: var(--accent-dark);
+      background: var(--soft);
+      border: 1px solid #b7dcef;
+    }
+
+    .btn:hover {
+      filter: brightness(.96);
+    }
+
+    .type-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .type-btn {
+      min-height: 74px;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      background: #fbfdff;
+      display: grid;
+      gap: 4px;
+      text-align: left;
+      align-content: center;
+    }
+
+    .type-btn strong {
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+
+    .type-btn span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .type-btn.active {
+      border-color: var(--accent);
+      background: var(--soft);
+      box-shadow: 0 0 0 3px rgba(11, 116, 184, .14);
+    }
+
+    .icon {
+      width: 17px;
+      height: 17px;
+      display: inline-block;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex: 0 0 auto;
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 10px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .tag.red { color: var(--red); background: #fff0ef; border-color: #edc7c3; }
+    .tag.gold { color: #7a5a00; background: #fff9db; border-color: #eadb91; }
+    .tag.blue { color: var(--blue); background: #edf6ff; border-color: #bdd6eb; }
+    .tag.green { color: var(--green); background: #edf8ef; border-color: #bdddc5; }
+    .tag.gray { color: var(--muted); background: #f6f8f7; }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+      display: grid;
+      gap: 4px;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .metric strong {
+      font-size: 24px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      min-width: 1550px;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      background: #f6f8f7;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      white-space: nowrap;
+    }
+
+    td {
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    th:nth-child(4),
+    td:nth-child(4) {
+      min-width: 470px;
+    }
+
+    th:nth-child(6),
+    td:nth-child(6) {
+      min-width: 430px;
+    }
+
+    .mono {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+    }
+
+    .profiles {
+      display: grid;
+      gap: 6px;
+    }
+
+    .profile-line {
+      display: grid;
+      grid-template-columns: 70px minmax(120px, 1fr) 92px 38px minmax(120px, 1fr);
+      gap: 8px;
+      align-items: start;
+      border-bottom: 1px dashed #dbe3e0;
+      padding-bottom: 6px;
+    }
+
+    .calc-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 8px;
+    }
+
+    .calc-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px;
+      background: #fbfdfc;
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .calc-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-weight: 700;
+      flex-wrap: wrap;
+    }
+
+    .copy-btn {
+      min-height: 28px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      color: var(--accent-dark);
+      background: var(--soft);
+      border: 1px solid #baded6;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .copy-btn:hover {
+      border-color: var(--accent);
+    }
+
+    .copy-btn.danger {
+      color: var(--danger);
+      background: #fff0ef;
+      border-color: #edc7c3;
+    }
+
+    .copy-btn.danger:hover {
+      border-color: var(--danger);
+    }
+
+    .piece-control {
+      display: inline-grid;
+      grid-template-columns: 28px minmax(86px, auto) 28px;
+      align-items: center;
+      gap: 6px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .piece-control button {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      color: var(--accent-dark);
+      background: var(--soft);
+      border: 1px solid #b7dcef;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .piece-control button:disabled {
+      cursor: not-allowed;
+      opacity: .45;
+    }
+
+    .piece-control span {
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .calc-values {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+      gap: 6px;
+      font-size: 13px;
+    }
+
+    .calc-values .wide {
+      grid-column: 1 / -1;
+    }
+
+    .calc-values span {
+      color: var(--muted);
+      border-radius: 6px;
+      padding: 4px;
+    }
+
+    .calc-values strong {
+      display: block;
+      color: var(--ink);
+      font-size: 15px;
+      font-variant-numeric: tabular-nums;
+      margin-top: 2px;
+    }
+
+    .has-tip {
+      cursor: help;
+      position: relative;
+    }
+
+    .has-tip:hover {
+      background: var(--soft);
+    }
+
+    .has-tip::after {
+      content: attr(data-tip);
+      position: absolute;
+      left: 0;
+      bottom: calc(100% + 8px);
+      z-index: 10;
+      width: max-content;
+      max-width: 280px;
+      color: #fff;
+      background: #243a42;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12px;
+      line-height: 1.35;
+      box-shadow: 0 10px 22px rgba(23, 32, 29, .22);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(4px);
+      transition: opacity .12s ease, transform .12s ease;
+      white-space: normal;
+    }
+
+    .has-tip:hover::after {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .notes {
+      display: grid;
+      gap: 6px;
+    }
+
+    .note {
+      padding: 8px;
+      border-radius: 6px;
+      background: #fff7f5;
+      border: 1px solid #efc9c2;
+      color: var(--red);
+      font-weight: 700;
+    }
+
+    .empty {
+      padding: 26px;
+      color: var(--muted);
+      text-align: center;
+      border: 1px dashed #b9c8c3;
+      border-radius: 8px;
+      background: #fbfdfc;
+    }
+
+    .catalog-panel {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .catalog-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #f7fbfe;
+    }
+
+    .catalog-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 30px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      color: var(--accent-dark);
+      background: var(--soft);
+      border: 1px solid #b7dcef;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .catalog-toggle:hover {
+      border-color: var(--accent);
+    }
+
+    .catalog-panel.collapsed .catalog {
+      display: none;
+    }
+
+    .catalog {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 14px 16px 16px;
+      scrollbar-color: #8bb9d8 #e8f2f8;
+    }
+
+    .catalog-title {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .catalog-note {
+      display: none;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .catalog-system {
+      min-width: 260px;
+      flex: 1 0 260px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .catalog-system h3 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    .catalog-items {
+      min-height: 58px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-content: start;
+    }
+
+    .catalog-empty {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .raw {
+      max-width: 360px;
+      max-height: 150px;
+      overflow: auto;
+      color: var(--muted);
+      background: #f8faf9;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px;
+    }
+
+    .debug-col {
+      display: none;
+    }
+
+    .download-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 980px) {
+      header,
+      .upload { grid-template-columns: 1fr; flex-direction: column; align-items: stretch; }
+      .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .type-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 620px) {
+      .cards { grid-template-columns: 1fr; }
+      .catalog-header { align-items: flex-start; flex-direction: column; }
+      .catalog-system { min-width: 240px; flex-basis: 240px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Extractor HTF Mosquiteros Brezza</h1>
+      <p class="subhead">Primera lectura por texto y estructura: notas de mosquitero, nomenclatura, medida final y perfiles de hoja</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div class="upload">
+        <div class="filebox" id="fileDropzone" role="button" tabindex="0" aria-label="Seleccionar o arrastrar PDF">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path></svg>
+          <input id="pdfInput" type="file" accept="application/pdf,.pdf">
+        </div>
+        <button class="btn" id="analyzeBtn" type="button">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+          Analizar PDF
+        </button>
+      </div>
+      <div class="status" id="status">Sube una HTF normal en PDF. Los colores no son necesarios; solo fueron referencia visual para ubicar los datos.</div>
+    </section>
+
+    <section class="cards" id="metrics" hidden>
+      <div class="metric">
+        <span>Archivo</span>
+        <strong id="fileName">-</strong>
+      </div>
+      <div class="metric">
+        <span>Ventanas detectadas</span>
+        <strong id="windowCount">0</strong>
+      </div>
+      <div class="metric">
+        <span>Con mosquitero</span>
+        <strong id="mosquitoCount">0</strong>
+      </div>
+    </section>
+
+    <section class="panel">
+      <p class="catalog-title">Tipo de mosquitero fijo</p>
+      <div class="type-grid" id="meshTypeGroup">
+        <button class="type-btn active" type="button" data-mesh-type="brefix-plastica">
+          <strong>Brefix</strong>
+          <span>Con escuadra plástica</span>
+        </button>
+        <button class="type-btn" type="button" data-mesh-type="brefix-45">
+          <strong>Brefix</strong>
+          <span>Con cortes a 45</span>
+        </button>
+        <button class="type-btn" type="button" data-mesh-type="cuprum">
+          <strong>Cuprum</strong>
+          <span>Fórmulas desde Excel</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="panel catalog-panel collapsed" id="catalogPanel">
+      <div class="catalog-header">
+        <p class="catalog-title">Perfiles de hoja cargados</p>
+        <button class="catalog-toggle" id="catalogToggle" type="button">Ver perfiles</button>
+        <span class="catalog-note">Sistemas activos para cálculo</span>
+      </div>
+      <div class="catalog" id="profileCatalog"></div>
+    </section>
+
+    <section class="panel">
+      <div id="empty" class="empty">Todavía no hay extracción. La tabla aparecerá aquí después de analizar el PDF.</div>
+      <div class="table-wrap" id="tableWrap" hidden>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nomenclatura</th>
+              <th>Notas mosquitero</th>
+              <th>Perfiles hoja detectados</th>
+              <th>Mosquiteros</th>
+              <th>Medidas fabricación</th>
+              <th>Confianza</th>
+              <th class="debug-col">Texto crudo</th>
+            </tr>
+          </thead>
+          <tbody id="rowsBody"></tbody>
+        </table>
+      </div>
+      <div class="download-row" id="downloadRow" hidden>
+        <button class="btn secondary" id="downloadExcelBtn" type="button">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+          Descargar lista Excel
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const localServer = 'http://127.0.0.1:8810';
+    const apiBase = location.protocol === 'file:' ? localServer : '';
+    const meshTypeLabels = {
+      'brefix-plastica': 'Brefix con escuadra plástica',
+      'brefix-45': 'Brefix con cortes a 45',
+      cuprum: 'Cuprum'
+    };
+    const catalogSystems = ['Kömmerling 76 AD', 'Premiline 58', 'Premiline 80', 'Eurofine 58', 'Eurofutur'];
+    const slidingProfiles = new Set(['6040', '6041', '2173', '2174']);
+    let selectedMeshType = localStorage.getItem('brezzaMeshType') || 'brefix-plastica';
+    let lastData = null;
+    let pieceOverrides = {};
+    let discardedCards = {};
+
+    const brefixPlasticRules = {
+      '76201': { system: 'Kömmerling 76 AD', vanoW: -64, vanoH: -64, mosqWAdd: 27, mosqHAdd: 41, cutAdd: -62 },
+      '76204': { system: 'Kömmerling 76 AD', vanoW: -64, vanoH: -64, mosqWAdd: 27, mosqHAdd: 41, cutAdd: -62 },
+      '58201': { system: 'Eurofine 58', vanoW: -62, vanoH: -62, mosqWAdd: 27, mosqHAdd: 41, cutAdd: -62 },
+      '58203': { system: 'Eurofine 58', vanoW: -62, vanoH: -62, mosqWAdd: 27, mosqHAdd: 41, cutAdd: -62 },
+      '0011': { system: 'Eurofutur', vanoW: -62, vanoH: -62, mosqWAdd: 27, mosqHAdd: 41, cutAdd: -62 },
+      '0114': { system: 'Eurofutur', vanoW: -62, vanoH: -62, mosqWAdd: 27, mosqHAdd: 41, cutAdd: -62 },
+      '0116': { system: 'Eurofutur', vanoW: -62, vanoH: -62, mosqWAdd: 27, mosqHAdd: 41, cutAdd: -62 },
+      '6040': { system: 'Premiline 80 hoja chica', vanoW: -85, vanoH: -22, mosqWAdd: 13.5, mosqHAdd: 41, cutAdd: -62 },
+      '6041': { system: 'Premiline 80 hoja grande', vanoW: -101, vanoH: -22, mosqWAdd: 13.5, mosqHAdd: 41, cutAdd: -62 },
+      '2174': { system: 'Premiline 58 hoja chica', vanoW: -77, vanoH: -22, mosqWAdd: 13.5, mosqHAdd: 41, cutAdd: -62 },
+      '2173': { system: 'Premiline 58 hoja grande', vanoW: -91, vanoH: -22, mosqWAdd: 13.5, mosqHAdd: 41, cutAdd: -62 }
+    };
+    const brefix45Rules = {
+      '76201': { system: 'Kömmerling 76 AD', vanoW: -64, vanoH: -64, mosqWAdd: 30, mosqHAdd: 30, cutAdd: 0 },
+      '76204': { system: 'Kömmerling 76 AD', vanoW: -64, vanoH: -64, mosqWAdd: 30, mosqHAdd: 30, cutAdd: 0 },
+      '58201': { system: 'Eurofine 58', vanoW: -62, vanoH: -62, mosqWAdd: 30, mosqHAdd: 30, cutAdd: 0 },
+      '58203': { system: 'Eurofine 58', vanoW: -62, vanoH: -62, mosqWAdd: 30, mosqHAdd: 30, cutAdd: 0 },
+      '0011': { system: 'Eurofutur', vanoW: -62, vanoH: -62, mosqWAdd: 30, mosqHAdd: 30, cutAdd: 0 },
+      '0114': { system: 'Eurofutur', vanoW: -62, vanoH: -62, mosqWAdd: 30, mosqHAdd: 30, cutAdd: 0 },
+      '0116': { system: 'Eurofutur', vanoW: -62, vanoH: -62, mosqWAdd: 30, mosqHAdd: 30, cutAdd: 0 },
+      '6040': { system: 'Premiline 80 hoja chica', vanoW: -85, vanoH: -22, mosqWAdd: 7, mosqHAdd: 28, cutAdd: 0 },
+      '6041': { system: 'Premiline 80 hoja grande', vanoW: -101, vanoH: -22, mosqWAdd: 7, mosqHAdd: 28, cutAdd: 0 },
+      '2174': { system: 'Premiline 58 hoja chica', vanoW: -77, vanoH: -22, mosqWAdd: 7, mosqHAdd: 28, cutAdd: 0 },
+      '2173': { system: 'Premiline 58 hoja grande', vanoW: -91, vanoH: -22, mosqWAdd: 7, mosqHAdd: 28, cutAdd: 0 }
+    };
+    const cuprumRules = {
+      '76201': { system: 'Kömmerling 76 AD', vanoW: -64, vanoH: -64, mosqWAdd: 30, mosqHAdd: 30, cutAdd: 0, extra: 'aranas' },
+      '76204': { system: 'Kömmerling 76 AD', vanoW: -64, vanoH: -64, mosqWAdd: 30, mosqHAdd: 30, cutAdd: 0, extra: 'aranas' },
+      '58201': { system: 'Eurofine 58', vanoW: -62, vanoH: -62, mosqWAdd: 30, mosqHAdd: 30, cutAdd: 0, extra: 'aranas' },
+      '58203': { system: 'Eurofine 58', vanoW: -62, vanoH: -62, mosqWAdd: 30, mosqHAdd: 30, cutAdd: 0, extra: 'aranas' },
+      '0011': { system: 'Eurofutur', vanoW: -62, vanoH: -62, mosqWAdd: 30, mosqHAdd: 30, cutAdd: 0, extra: 'aranas' },
+      '0114': { system: 'Eurofutur', vanoW: -62, vanoH: -62, mosqWAdd: 30, mosqHAdd: 30, cutAdd: 0, extra: 'aranas' },
+      '0116': { system: 'Eurofutur', vanoW: -62, vanoH: -62, mosqWAdd: 30, mosqHAdd: 30, cutAdd: 0, extra: 'aranas' },
+      '6040': { system: 'Premiline 80 hoja chica', vanoW: -85, vanoH: -22, mosqWAdd: 3, mosqHAdd: 15, cutAdd: 0, extra: 'canal' },
+      '6041': { system: 'Premiline 80 hoja grande', vanoW: -100, vanoH: -22, mosqWAdd: 3, mosqHAdd: 15, cutAdd: 0, extra: 'canal' },
+      '2174': { system: 'Premiline 58 hoja chica', vanoW: -76.75, vanoH: -22, mosqWAdd: 3, mosqHAdd: 15, cutAdd: 0, extra: 'canal' },
+      '2173': { system: 'Premiline 58 hoja grande', vanoW: -91, vanoH: -22, mosqWAdd: 3, mosqHAdd: 15, cutAdd: 0, extra: 'canal' }
+    };
+
+    if (location.protocol === 'file:') {
+      $('status').textContent = 'Abriendo la version correcta para cargar PDFs...';
+      window.location.replace(localServer);
+    }
+
+    function setStatus(message, isError = false) {
+      $('status').textContent = message;
+      $('status').style.color = isError ? 'var(--danger)' : 'var(--muted)';
+    }
+
+    function setMeshType(type) {
+      selectedMeshType = type;
+      localStorage.setItem('brezzaMeshType', type);
+      document.querySelectorAll('[data-mesh-type]').forEach((button) => {
+        button.classList.toggle('active', button.dataset.meshType === type);
+      });
+      if (lastData) render(lastData);
+    }
+
+    async function requestJson(url, options) {
+      try {
+        const response = await fetch(url, options);
+        const text = await response.text();
+        let data = {};
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch {
+          data = { error: text || 'Respuesta inválida del servidor.' };
+        }
+        return { response, data };
+      } catch {
+        throw new Error(`No pude conectar con el servidor de la app. Revisa que la PC principal tenga abierto el servidor y vuelve a entrar a ${location.origin || localServer}.`);
+      }
+    }
+
+    async function loadProfiles() {
+      try {
+        const { response, data } = await requestJson(`${apiBase}/api/profiles`);
+        if (!response.ok || !Array.isArray(data.profiles)) return;
+        const grouped = data.profiles.reduce((acc, item) => {
+          if (!acc[item.system]) acc[item.system] = [];
+          acc[item.system].push(item);
+          return acc;
+        }, {});
+        const orderedSystems = [...catalogSystems, ...Object.keys(grouped).filter((system) => !catalogSystems.includes(system))];
+        $('profileCatalog').innerHTML = orderedSystems.map((system) => {
+          const items = grouped[system] || [];
+          const tags = items.length
+            ? items.map((item) => `<span class="tag gold">${escapeHtml(item.profile)} · ${escapeHtml(item.description)}</span>`).join('')
+            : '<span class="catalog-empty">Pendiente de perfiles</span>';
+          return `<div class="catalog-system"><h3>${escapeHtml(system)}</h3><div class="catalog-items">${tags}</div></div>`;
+        }).join('');
+      } catch {
+        $('profileCatalog').innerHTML = '<span class="tag gray">Catálogo no disponible</span>';
+      }
+    }
+
+    async function analyzeUpload() {
+      const file = $('pdfInput').files[0];
+      if (!file) {
+        setStatus('Selecciona un PDF primero.', true);
+        return;
+      }
+      const form = new FormData();
+      form.append('pdf', file);
+      setStatus('Analizando PDF...');
+      const { response, data } = await requestJson(`${apiBase}/api/extract`, { method: 'POST', body: form });
+      if (!response.ok || data.error) {
+        setStatus(data.error || 'No se pudo analizar el PDF.', true);
+        return;
+      }
+      pieceOverrides = {};
+      render(data);
+    }
+
+    async function analyzeSample() {
+      setStatus('Analizando PDF de ejemplo...');
+      const { response, data } = await requestJson(`${apiBase}/api/sample`);
+      if (!response.ok || data.error) {
+        setStatus(data.error || 'No se pudo analizar el ejemplo.', true);
+        return;
+      }
+      pieceOverrides = {};
+      render(data);
+    }
+
+    function render(data) {
+      lastData = data;
+      $('metrics').hidden = false;
+      $('empty').hidden = true;
+      $('tableWrap').hidden = false;
+      $('downloadRow').hidden = false;
+      $('fileName').textContent = data.fileName || '-';
+      $('windowCount').textContent = data.windowCount ?? 0;
+      $('mosquitoCount').textContent = data.mosquitoCount ?? 0;
+      $('rowsBody').innerHTML = (data.mosquitoWindows || []).map(rowHtml).join('');
+      if (!data.mosquitoWindows || data.mosquitoWindows.length === 0) {
+        $('rowsBody').innerHTML = '<tr><td colspan="8">No encontré ventanas con texto MOSQUITERO. Revisa el texto crudo o mándame este PDF para ajustar el detector.</td></tr>';
+      }
+      setStatus(`Listo. Se muestran ${data.mosquitoCount || 0} ventana(s) con nota de mosquitero.`);
+    }
+
+    function rowHtml(item) {
+      const profiles = item.leafProfiles || [];
+      const notes = item.mosquitoNotes || [];
+      const key = rowKey(item);
+      const pieces = effectiveWindowPieceCount(item);
+      const detectedPieces = windowPieceCount(profiles);
+      const maxPieces = maxWindowPieceCount(item);
+      const piecesCell = detectedPieces ? pieceControlHtml(key, pieces, maxPieces) : '<span class="tag gray">-</span>';
+      return `
+        <tr>
+          <td>${item.index}</td>
+          <td>
+            <span class="tag blue">${escapeHtml(item.nomenclature || 'Sin nomenclatura')}</span>
+            <div class="status">Páginas: ${(item.pages || []).join(', ')}</div>
+          </td>
+          <td>
+            <div class="notes">
+              ${notes.map((note) => `<div class="note">Pág. ${note.page}: ${escapeHtml(note.text)}</div>`).join('')}
+            </div>
+          </td>
+          <td>
+            <div class="profiles">
+              ${profiles.map(profileHtml).join('') || '<span class="tag gray">Sin perfil hoja</span>'}
+            </div>
+          </td>
+          <td>${piecesCell}</td>
+          <td>${fabricationHtml(profiles, pieces, key)}</td>
+          <td><span class="tag ${item.confidence === 'alta' ? 'green' : item.confidence === 'media' ? 'gold' : 'red'}">${escapeHtml(item.confidence)}</span></td>
+          <td class="debug-col"><div class="raw mono">${escapeHtml(item.rawPreview || '')}</div></td>
+        </tr>
+      `;
+    }
+
+    function pieceControlHtml(key, pieces, maxPieces) {
+      return `
+        <div class="piece-control">
+          <button type="button" data-piece-key="${escapeHtmlAttr(key)}" data-piece-delta="-1" ${pieces <= 0 ? 'disabled' : ''}>-</button>
+          <span>${pieces} mosquitero${pieces === 1 ? '' : 's'}</span>
+          <button type="button" data-piece-key="${escapeHtmlAttr(key)}" data-piece-delta="1" ${pieces >= maxPieces ? 'disabled' : ''}>+</button>
+        </div>`;
+    }
+
+    function fabricationHtml(profiles, targetCount = null, key = '') {
+      const rules = activeFormulaRules();
+      if (!rules) {
+        return '<span class="tag gray">Fórmula pendiente</span>';
+      }
+
+      const groups = groupsForFabrication(profiles, targetCount, key);
+      const cards = groups.map((group) => {
+        const rule = rules[group.profile];
+        if (!rule) {
+          return `<div class="calc-card"><div class="calc-title"><span>${escapeHtml(group.profile)}</span><span class="tag gray">Sin fórmula</span></div></div>`;
+        }
+        if (!Number.isFinite(group.h) || !Number.isFinite(group.v)) {
+          return `<div class="calc-card"><div class="calc-title"><span>${escapeHtml(group.profile)}</span><span class="tag gold">Falta H/V</span></div></div>`;
+        }
+        const vanoW = group.h + rule.vanoW;
+        const vanoH = group.v + rule.vanoH;
+        const mosqW = vanoW + rule.mosqWAdd;
+        const mosqH = vanoH + rule.mosqHAdd;
+        const cutW = mosqW + rule.cutAdd;
+        const cutH = mosqH + rule.cutAdd;
+        const count = group.count || 1;
+        const cutQty = count * 2;
+        const pieceLabel = group.pieceTotal > 1 ? `Cuadro ${group.pieceIndex} de ${group.pieceTotal}` : 'Cuadro 1';
+        const discardToken = cardToken(group);
+        const extra = calcExtra(rule, mosqW, mosqH, count);
+        const extraCopy = extra ? ` | ${extra.label}: ${extra.value}` : '';
+        const copyText = `${group.profile} | ${meshTypeLabels[selectedMeshType]} | ${pieceLabel} | Vano: ${fmtMm(vanoW)} x ${fmtMm(vanoH)} mm | Perfil mosquitero: ${cutQty} pzas x ${fmtMm(cutW)} mm horizontal, ${cutQty} pzas x ${fmtMm(cutH)} mm vertical | Medida final mosquitero: ${fmtMm(mosqW)} x ${fmtMm(mosqH)} mm${extraCopy}`;
+        const cutTipW = rule.cutAdd === 0
+          ? `Perfil para mosquitero: en corte a 45 el perfil ancho queda igual a la medida final ancho ${fmtMm(mosqW)}. Son ${cutQty} piezas.`
+          : `Perfil para mosquitero: ancho = medida final ancho ${fmtMm(mosqW)} ${signed(rule.cutAdd)}. Son ${cutQty} piezas.`;
+        const cutTipH = rule.cutAdd === 0
+          ? `Perfil para mosquitero: en corte a 45 el perfil alto queda igual a la medida final alto ${fmtMm(mosqH)}. Son ${cutQty} piezas.`
+          : `Perfil para mosquitero: alto = medida final alto ${fmtMm(mosqH)} ${signed(rule.cutAdd)}. Son ${cutQty} piezas.`;
+        return `
+          <div class="calc-card">
+            <div class="calc-title">
+              <span>${escapeHtml(group.profile)}</span>
+              <span class="tag green">${escapeHtml(rule.system)}</span>
+              <span class="tag blue">${escapeHtml(pieceLabel)}</span>
+              <button class="copy-btn danger" type="button" data-discard-key="${escapeHtmlAttr(key)}" data-discard-token="${escapeHtmlAttr(discardToken)}">Descartar</button>
+              <button class="copy-btn" type="button" data-copy="${escapeHtmlAttr(copyText)}">Copiar</button>
+            </div>
+            <div class="calc-values">
+              <span class="wide has-tip" data-tip="${escapeHtmlAttr(`Medidas tomadas de la HTF en 01TRONZADORAS DE PERFIL: hoja horizontal ${fmtMm(group.h)} mm y hoja vertical ${fmtMm(group.v)} mm.`)}">Medida hoja HTF<strong>H ${fmtMm(group.h)} mm / V ${fmtMm(group.v)} mm</strong></span>
+              <span class="wide has-tip" data-tip="${escapeHtmlAttr(`Vano = hoja H ${fmtMm(group.h)} ${signed(rule.vanoW)} y hoja V ${fmtMm(group.v)} ${signed(rule.vanoH)}.`)}">Vano<strong>${fmtMm(vanoW)} x ${fmtMm(vanoH)} mm</strong></span>
+              <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipW)}">Perfil horizontal para fabricar<strong>${cutQty} pzas x ${fmtMm(cutW)} mm</strong></span>
+              <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipH)}">Perfil vertical para fabricar<strong>${cutQty} pzas x ${fmtMm(cutH)} mm</strong></span>
+              <span class="has-tip" data-tip="${escapeHtmlAttr(`Medida final del mosquitero: ancho = vano ancho ${fmtMm(vanoW)} ${signed(rule.mosqWAdd)}.`)}">Medida final ancho<strong>${fmtMm(mosqW)} mm</strong></span>
+              <span class="has-tip" data-tip="${escapeHtmlAttr(`Medida final del mosquitero: alto = vano alto ${fmtMm(vanoH)} ${signed(rule.mosqHAdd)}.`)}">Medida final alto<strong>${fmtMm(mosqH)} mm</strong></span>
+              ${extra ? `<span class="wide has-tip" data-tip="${escapeHtmlAttr(extra.tip)}">${escapeHtml(extra.label)}<strong>${escapeHtml(extra.value)}</strong></span>` : ''}
+            </div>
+          </div>`;
+      });
+
+      return cards.length ? `<div class="calc-list">${cards.join('')}</div>` : '<span class="tag gray">Sin mosquiteros seleccionados</span>';
+    }
+
+    function activeFormulaRules() {
+      if (selectedMeshType === 'brefix-plastica') return brefixPlasticRules;
+      if (selectedMeshType === 'brefix-45') return brefix45Rules;
+      if (selectedMeshType === 'cuprum') return cuprumRules;
+      return null;
+    }
+
+    function calcExtra(rule, mosqW, mosqH, count = 1) {
+      if (rule.extra === 'aranas') {
+        const aranasEach = Math.round(((((mosqW - 30) / 400) + 1) * 2) + ((((mosqH - 30) / 400) + 1) * 2));
+        const aranas = aranasEach * count;
+        return {
+          label: 'Arañas',
+          value: `${aranas} pzas`,
+          tip: `Arañas por mosquitero = REDONDEAR(((((ancho ${fmtMm(mosqW)} - 30) / 400) + 1) x 2) + ((((alto ${fmtMm(mosqH)} - 30) / 400) + 1) x 2), 0). Total = ${aranasEach} x ${count}.`
+        };
+      }
+      if (rule.extra === 'canal') {
+        return {
+          label: 'Canal de 1/2"',
+          value: `${fmtMm(mosqH)} mm${count > 1 ? `, ${count} pzas` : ''}`,
+          tip: `Canal de 1/2 pulgada = alto del mosquitero ${fmtMm(mosqH)} mm${count > 1 ? `, una pieza por mosquitero (${count}).` : '.'}`
+        };
+      }
+      return null;
+    }
+
+    function groupProfiles(profiles) {
+      const byProfile = {};
+      profiles.forEach((profile) => {
+        const key = profile.profile;
+        if (!byProfile[key]) byProfile[key] = { profile: key, h: [], v: [] };
+        const length = parseLocaleNumber(profile.length);
+        if (!Number.isFinite(length)) return;
+        const pieces = profilePieceCount(profile);
+        const count = Math.max(1, Math.floor(pieces / 2));
+        const entry = { length, count };
+        if (profile.orientation === 'H') byProfile[key].h.push(entry);
+        if (profile.orientation === 'V') byProfile[key].v.push(entry);
+      });
+      const groups = [];
+      Object.values(byProfile).forEach((set) => {
+        const hs = mergeProfileEntries(set.h);
+        const vs = mergeProfileEntries(set.v);
+        const max = Math.max(hs.length, vs.length);
+        for (let index = 0; index < max; index += 1) {
+          const hEntry = hs[index] || hs[hs.length - 1] || { length: NaN, count: 1 };
+          const vEntry = vs[index] || vs[vs.length - 1] || { length: NaN, count: 1 };
+          groups.push({
+            profile: set.profile,
+            h: hEntry.length,
+            v: vEntry.length,
+            count: Math.max(1, Math.min(hEntry.count || 1, vEntry.count || 1))
+          });
+        }
+      });
+      return groups;
+    }
+
+    function windowPieceCount(profiles) {
+      const rules = activeFormulaRules();
+      if (!rules) return 0;
+      return groupProfiles(profiles)
+        .filter((group) => rules[group.profile] && Number.isFinite(group.h) && Number.isFinite(group.v))
+        .reduce((sum, group) => sum + (group.count || 1), 0);
+    }
+
+    function defaultWindowPieceCount(profiles) {
+      const total = windowPieceCount(profiles);
+      if (!total) return 0;
+      return isSlidingWindow(profiles) ? 1 : total;
+    }
+
+    function isSlidingWindow(profiles) {
+      return profiles.some((profile) => slidingProfiles.has(profile.profile));
+    }
+
+    function groupsForFabrication(profiles, targetCount = null, key = '') {
+      const detected = groupProfiles(profiles);
+      const expanded = [];
+      detected.forEach((group) => {
+        const count = Math.max(1, group.count || 1);
+        for (let index = 1; index <= count; index += 1) {
+          expanded.push({ ...group, count: 1, sourceCount: count, sourceIndex: index });
+        }
+      });
+      const discarded = discardedCardSet(key);
+      const available = expanded.filter((group) => !discarded.has(cardToken(group)));
+      let target = Number(targetCount);
+      if (!Number.isFinite(target) || target < 0) target = available.length;
+      target = Math.min(target, available.length);
+      if (target === 0) return [];
+      const adjusted = available.slice(0, target);
+      const total = adjusted.length || available.length;
+      return adjusted.map((group, index) => ({
+        ...group,
+        pieceIndex: index + 1,
+        pieceTotal: total
+      }));
+    }
+
+    function effectiveWindowPieceCount(item) {
+      const key = rowKey(item);
+      const value = Number(pieceOverrides[key]);
+      const max = maxWindowPieceCount(item);
+      if (Number.isFinite(value) && value >= 0) return Math.min(value, max);
+      const detected = defaultWindowPieceCount(item.leafProfiles || []);
+      return Math.min(max, Math.max(0, detected - discardedCardSet(key).size));
+    }
+
+    function maxWindowPieceCount(item) {
+      const key = rowKey(item);
+      const profiles = item.leafProfiles || [];
+      const available = expandedProfileGroups(profiles).filter((group) => !discardedCardSet(key).has(cardToken(group)));
+      if (isSlidingWindow(profiles)) return available.length || windowPieceCount(profiles);
+      return available.length;
+    }
+
+    function expandedProfileGroups(profiles) {
+      const expanded = [];
+      groupProfiles(profiles).forEach((group) => {
+        const count = Math.max(1, group.count || 1);
+        for (let index = 1; index <= count; index += 1) {
+          expanded.push({ ...group, count: 1, sourceCount: count, sourceIndex: index });
+        }
+      });
+      return expanded;
+    }
+
+    function discardedCardSet(key) {
+      return new Set(discardedCards[key] || []);
+    }
+
+    function cardToken(group) {
+      return `${group.profile}|${fmtMm(group.h)}|${fmtMm(group.v)}|${group.sourceIndex || 1}`;
+    }
+
+    function applyWindowPieceCount(groups, targetCount) {
+      if (!Number.isFinite(targetCount) || targetCount <= 0) return groups;
+      let remaining = targetCount;
+      const adjusted = [];
+      groups.forEach((group) => {
+        if (remaining <= 0) return;
+        const count = Math.max(1, group.count || 1);
+        const used = Math.min(count, remaining);
+        adjusted.push({ ...group, count: used });
+        remaining -= used;
+      });
+      return adjusted;
+    }
+
+    function rowKey(item) {
+      return `${item.index || 0}-${item.nomenclature || ''}-${(item.pages || []).join('.')}`;
+    }
+
+    function profilePieceCount(profile) {
+      const quantity = Number(profile.quantity);
+      const total = Number(profile.totalQuantity);
+      if (Number.isFinite(total) && total > 0) return total;
+      if (Number.isFinite(quantity) && quantity > 0) return quantity;
+      return 2;
+    }
+
+    function mergeProfileEntries(entries) {
+      const merged = new Map();
+      entries.forEach((entry) => {
+        const key = fmtMm(entry.length);
+        const current = merged.get(key) || { length: entry.length, count: 0 };
+        current.count += entry.count;
+        merged.set(key, current);
+      });
+      return Array.from(merged.values());
+    }
+
+    function fabricationRows() {
+      const rules = activeFormulaRules();
+      if (!lastData || !rules) return [];
+      const rows = [];
+      (lastData.mosquitoWindows || []).forEach((item) => {
+        groupsForFabrication(item.leafProfiles || [], effectiveWindowPieceCount(item)).forEach((group) => {
+          const rule = rules[group.profile];
+          if (!rule || !Number.isFinite(group.h) || !Number.isFinite(group.v)) return;
+          const vanoW = group.h + rule.vanoW;
+          const vanoH = group.v + rule.vanoH;
+          const mosqW = vanoW + rule.mosqWAdd;
+          const mosqH = vanoH + rule.mosqHAdd;
+          const cutW = mosqW + rule.cutAdd;
+          const cutH = mosqH + rule.cutAdd;
+          const count = group.count || 1;
+          const cutQty = count * 2;
+          const extra = calcExtra(rule, mosqW, mosqH, count);
+          rows.push({
+            nomenclature: item.nomenclature || '',
+            meshType: meshTypeLabels[selectedMeshType] || selectedMeshType,
+            profile: group.profile,
+            system: rule.system,
+            count,
+            leafH: group.h,
+            leafV: group.v,
+            vanoW,
+            vanoH,
+            mosqW,
+            mosqH,
+            cutW,
+            cutH,
+            cutQty,
+            extraLabel: extra ? extra.label : '',
+            extraValue: extra ? extra.value : ''
+          });
+        });
+      });
+      return rows;
+    }
+
+    async function copyText(text, button) {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const area = document.createElement('textarea');
+        area.value = text;
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand('copy');
+        area.remove();
+      }
+      const old = button.textContent;
+      button.textContent = 'Copiado';
+      setTimeout(() => button.textContent = old, 900);
+    }
+
+    function downloadExcel() {
+      const rows = fabricationRows();
+      if (!rows.length) {
+        setStatus('No hay medidas calculadas para descargar.', true);
+        return;
+      }
+      const headers = ['Nomenclatura', 'Perfil hoja', 'Sistema', 'Cuadros detectados', 'Hoja H', 'Hoja V', 'Vano ancho', 'Vano alto', 'Perfil horizontal para fabricar', 'Pzas horizontal', 'Perfil vertical para fabricar', 'Pzas vertical', 'Medida final ancho', 'Medida final alto', 'Extra', 'Extra valor'];
+      const fullHeaders = ['Tipo de mosquitero', ...headers];
+      const htmlRows = [
+        `<tr>${fullHeaders.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr>`,
+        ...rows.map((row) => `<tr>
+          <td>${escapeHtml(row.meshType)}</td>
+          <td>${escapeHtml(row.nomenclature)}</td>
+          <td>${escapeHtml(row.profile)}</td>
+          <td>${escapeHtml(row.system)}</td>
+          <td>${row.count}</td>
+          <td>${fmtMm(row.leafH)}</td>
+          <td>${fmtMm(row.leafV)}</td>
+          <td>${fmtMm(row.vanoW)}</td>
+          <td>${fmtMm(row.vanoH)}</td>
+          <td>${fmtMm(row.cutW)}</td>
+          <td>${row.cutQty}</td>
+          <td>${fmtMm(row.cutH)}</td>
+          <td>${row.cutQty}</td>
+          <td>${fmtMm(row.mosqW)}</td>
+          <td>${fmtMm(row.mosqH)}</td>
+          <td>${escapeHtml(row.extraLabel)}</td>
+          <td>${escapeHtml(row.extraValue)}</td>
+        </tr>`)
+      ].join('');
+      const workbook = `<!doctype html><html><head><meta charset="utf-8"></head><body><table>${htmlRows}</table></body></html>`;
+      const blob = new Blob([workbook], { type: 'application/vnd.ms-excel;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = selectedMeshType === 'brefix-45' ? 'medidas-mosquiteros-brefix-45.xls' : selectedMeshType === 'cuprum' ? 'medidas-mosquiteros-cuprum.xls' : 'medidas-mosquiteros-brefix-escuadra-plastica.xls';
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    function parseLocaleNumber(value) {
+      const text = String(value ?? '').trim();
+      if (!text) return NaN;
+      return Number(text.replace(',', '.'));
+    }
+
+    function fmtMm(value) {
+      if (!Number.isFinite(value)) return '-';
+      const rounded = Math.round(value * 10) / 10;
+      return Number.isInteger(rounded) ? String(rounded) : String(rounded).replace('.', ',');
+    }
+
+    function signed(value) {
+      if (!Number.isFinite(value)) return '';
+      return value >= 0 ? `+ ${fmtMm(value)}` : `- ${fmtMm(Math.abs(value))}`;
+    }
+
+    function escapeHtmlAttr(value) {
+      return escapeHtml(value).replaceAll('\n', ' ');
+    }
+
+    function profileHtml(profile) {
+      const catalog = profile.catalogSystem ? `<div class="status">${escapeHtml(profile.catalogSystem)} · ${escapeHtml(profile.catalogDescription)}</div>` : '';
+      const pieces = profilePieceCount(profile);
+      return `
+        <div class="profile-line">
+          <span class="tag gold">${escapeHtml(profile.profile)}</span>
+          <span>${escapeHtml(profile.description)}</span>
+          <strong>${escapeHtml(profile.length)} mm</strong>
+          <span>${escapeHtml(profile.orientation)}</span>
+          <span class="tag gray">${pieces} pzas HTF</span>
+          <span>${catalog}</span>
+        </div>
+      `;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      }[char]));
+    }
+
+    const pdfInput = $('pdfInput');
+    const fileDropzone = $('fileDropzone');
+    fileDropzone.addEventListener('click', (event) => {
+      if (event.target !== pdfInput) pdfInput.click();
+    });
+    fileDropzone.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        pdfInput.click();
+      }
+    });
+    pdfInput.addEventListener('change', () => {
+      const file = pdfInput.files[0];
+      if (file) setStatus(`PDF listo para analizar: ${file.name}`);
+    });
+    ['dragenter', 'dragover'].forEach((eventName) => {
+      fileDropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        fileDropzone.classList.add('dragover');
+      });
+    });
+    ['dragleave', 'drop'].forEach((eventName) => {
+      fileDropzone.addEventListener(eventName, () => {
+        fileDropzone.classList.remove('dragover');
+      });
+    });
+    fileDropzone.addEventListener('drop', (event) => {
+      event.preventDefault();
+      const file = Array.from(event.dataTransfer.files || []).find((item) => item.type === 'application/pdf' || item.name.toLowerCase().endsWith('.pdf'));
+      if (!file) {
+        setStatus('Suelta un archivo PDF.', true);
+        return;
+      }
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      pdfInput.files = transfer.files;
+      pdfInput.dispatchEvent(new Event('change'));
+    });
+
+    $('analyzeBtn').addEventListener('click', () => analyzeUpload().catch((error) => setStatus(error.message, true)));
+    $('catalogToggle').addEventListener('click', () => {
+      const panel = $('catalogPanel');
+      const collapsed = panel.classList.toggle('collapsed');
+      $('catalogToggle').textContent = collapsed ? 'Ver perfiles' : 'Ocultar perfiles';
+    });
+    $('downloadExcelBtn').addEventListener('click', downloadExcel);
+    $('rowsBody').addEventListener('click', (event) => {
+      const pieceButton = event.target.closest('[data-piece-key]');
+      if (pieceButton) {
+        const key = pieceButton.dataset.pieceKey;
+        const item = (lastData.mosquitoWindows || []).find((row) => rowKey(row) === key);
+        const current = effectiveWindowPieceCount(item || { leafProfiles: [] });
+        const delta = Number(pieceButton.dataset.pieceDelta) || 0;
+        const max = maxWindowPieceCount(item || { leafProfiles: [] });
+        pieceOverrides[key] = Math.min(max, Math.max(0, current + delta));
+        render(lastData);
+        return;
+      }
+      const discardButton = event.target.closest('[data-discard-key]');
+      if (discardButton) {
+        const key = discardButton.dataset.discardKey;
+        const token = discardButton.dataset.discardToken;
+        const item = (lastData.mosquitoWindows || []).find((row) => rowKey(row) === key);
+        const current = effectiveWindowPieceCount(item || { leafProfiles: [] });
+        if (!discardedCards[key]) discardedCards[key] = [];
+        if (token && !discardedCards[key].includes(token)) discardedCards[key].push(token);
+        pieceOverrides[key] = Math.max(0, current - 1);
+        render(lastData);
+        return;
+      }
+      const button = event.target.closest('[data-copy]');
+      if (button) copyText(button.dataset.copy, button);
+    });
+    document.querySelectorAll('[data-mesh-type]').forEach((button) => {
+      button.addEventListener('click', () => setMeshType(button.dataset.meshType));
+    });
+    setMeshType(selectedMeshType);
+    loadProfiles();
+  </script>
+</body>
+</html>

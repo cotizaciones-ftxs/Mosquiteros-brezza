@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: mosquiteros-brezza
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    healthCheckPath: /health
+    envVars:
+      - key: APP_USER
+        value: brezza
+      - key: APP_PASSWORD
+        sync: false
