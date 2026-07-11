@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import cgi
 import base64
 import json
 import os
@@ -318,6 +317,47 @@ def confidence(has_mosquito: bool, measure: dict, profiles: list[dict]) -> str:
     return "revisar"
 
 
+def parse_pdf_upload(headers, rfile) -> tuple[str, bytes] | None:
+    content_type = headers.get("Content-Type", "")
+    boundary_match = re.search(r'boundary="?([^";]+)"?', content_type)
+    if "multipart/form-data" not in content_type or not boundary_match:
+        return None
+
+    try:
+        content_length = int(headers.get("Content-Length", "0"))
+    except ValueError:
+        return None
+
+    body = rfile.read(content_length)
+    boundary = ("--" + boundary_match.group(1)).encode("utf-8")
+
+    for part in body.split(boundary):
+        part = part.strip(b"\r\n")
+        if not part or part == b"--":
+            continue
+        if part.endswith(b"--"):
+            part = part[:-2].rstrip(b"\r\n")
+
+        if b"\r\n\r\n" in part:
+            raw_headers, data = part.split(b"\r\n\r\n", 1)
+        elif b"\n\n" in part:
+            raw_headers, data = part.split(b"\n\n", 1)
+        else:
+            continue
+
+        header_text = raw_headers.decode("latin-1", errors="ignore")
+        if 'name="pdf"' not in header_text:
+            continue
+
+        filename_match = re.search(r'filename="([^"]*)"', header_text)
+        filename = filename_match.group(1) if filename_match else "htf.pdf"
+        if data.endswith(b"\r\n"):
+            data = data[:-2]
+        return filename or "htf.pdf", data
+
+    return None
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self) -> None:
         self.send_response(204)
@@ -355,25 +395,18 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"error": "Ruta no encontrada."}, status=404)
             return
 
-        form = cgi.FieldStorage(
-            fp=self.rfile,
-            headers=self.headers,
-            environ={
-                "REQUEST_METHOD": "POST",
-                "CONTENT_TYPE": self.headers.get("Content-Type", ""),
-            },
-        )
-        upload = form["pdf"] if "pdf" in form else None
-        if upload is None or not getattr(upload, "file", None):
+        upload = parse_pdf_upload(self.headers, self.rfile)
+        if upload is None:
             self.send_json({"error": "Sube un PDF en el campo pdf."}, status=400)
             return
 
-        suffix = Path(upload.filename or "htf.pdf").suffix or ".pdf"
+        filename, file_data = upload
+        suffix = Path(filename or "htf.pdf").suffix or ".pdf"
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-            tmp.write(upload.file.read())
+            tmp.write(file_data)
             tmp_path = Path(tmp.name)
         try:
-            self.send_json(extract_pdf(tmp_path, upload.filename or tmp_path.name))
+            self.send_json(extract_pdf(tmp_path, filename or tmp_path.name))
         except Exception as exc:
             self.send_json({"error": str(exc)}, status=500)
         finally:
