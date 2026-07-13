@@ -17,6 +17,23 @@ SAMPLE_PDF = Path(
     r"C:\Users\cotiz\Fentexhaus Dropbox\Jose Juan Garza\HTF\Diego Jimenez\LT 585 Diego Jimenez HT10\HTF LT 585 Diego Jimenez HT10 - copia.pdf"
 )
 
+
+def content_type_for(path: Path) -> str:
+    suffix = path.suffix.lower()
+    if suffix == ".png":
+        return "image/png"
+    if suffix in (".jpg", ".jpeg"):
+        return "image/jpeg"
+    if suffix == ".svg":
+        return "image/svg+xml"
+    if suffix == ".ico":
+        return "image/x-icon"
+    if suffix == ".css":
+        return "text/css; charset=utf-8"
+    if suffix == ".js":
+        return "application/javascript; charset=utf-8"
+    return "application/octet-stream"
+
 LEAF_PROFILE_CATALOG = [
     {"system": "Kömmerling 76 AD", "profile": "76201", "description": "Hoja interior de 78"},
     {"system": "Kömmerling 76 AD", "profile": "76204", "description": "Hoja interior de 110"},
@@ -375,6 +392,14 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path in ("/", "/index.html"):
             self.send_file(ROOT / "index.html", "text/html; charset=utf-8")
+            return
+        if path.startswith("/assets/"):
+            target = (ROOT / path.lstrip("/")).resolve()
+            assets_root = (ROOT / "assets").resolve()
+            if target.exists() and target.is_file() and assets_root in target.parents:
+                self.send_file(target, content_type_for(target))
+                return
+            self.send_json({"error": "Archivo no encontrado."}, status=404)
             return
         if path == "/api/sample":
             if not SAMPLE_PDF.exists():

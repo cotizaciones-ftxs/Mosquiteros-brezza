@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Extractor HTF Mosquiteros Brezza</title>
+  <link rel="icon" type="image/png" href="/assets/brezza-icon-blue.png">
   <style>
     :root {
       --bg: #f2f7fb;
@@ -51,6 +52,46 @@
       align-items: center;
       justify-content: space-between;
       gap: 16px;
+    }
+
+    .brand {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand-mark {
+      width: 68px;
+      height: 68px;
+      flex: 0 0 68px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: #fff;
+      border: 1px solid rgba(255, 255, 255, .45);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, .16);
+    }
+
+    .brand-mark img {
+      width: 52px;
+      height: 52px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .brand-name {
+      margin: 0 0 4px;
+      color: #d8efff;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .brand-copy {
+      min-width: 0;
     }
 
     h1 {
@@ -636,14 +677,24 @@
       .cards { grid-template-columns: 1fr; }
       .catalog-header { align-items: flex-start; flex-direction: column; }
       .catalog-system { min-width: 240px; flex-basis: 240px; }
+      .brand { align-items: flex-start; gap: 12px; }
+      .brand-mark { width: 54px; height: 54px; flex-basis: 54px; }
+      .brand-mark img { width: 42px; height: 42px; }
+      .subhead { font-size: 13px; }
     }
   </style>
 </head>
 <body>
   <header>
-    <div>
-      <h1>Extractor HTF Mosquiteros Brezza</h1>
-      <p class="subhead">Primera lectura por texto y estructura: notas de mosquitero, nomenclatura, medida final y perfiles de hoja</p>
+    <div class="brand">
+      <div class="brand-mark">
+        <img src="/assets/brezza-icon-blue.png" alt="Brezza Screens">
+      </div>
+      <div class="brand-copy">
+        <p class="brand-name">Brezza Screens</p>
+        <h1>Extractor HTF Mosquiteros</h1>
+        <p class="subhead">Primera lectura por texto y estructura: notas de mosquitero, nomenclatura, medida final y perfiles de hoja</p>
+      </div>
     </div>
   </header>
 
