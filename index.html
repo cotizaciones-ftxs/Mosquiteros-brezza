@@ -565,6 +565,10 @@
       margin: 0;
       font-size: 15px;
       letter-spacing: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     .catalog-items {
@@ -718,6 +722,13 @@
       cuprum: 'Cuprum'
     };
     const catalogSystems = ['Kömmerling 76 AD', 'Premiline 58', 'Premiline 80', 'Eurofine 58', 'Eurofutur'];
+    const systemClosureTypes = {
+      'Kömmerling 76 AD': 'Presión',
+      'Premiline 58': 'Corredizo',
+      'Premiline 80': 'Corredizo',
+      'Eurofine 58': 'Presión',
+      'Eurofutur': 'Presión'
+    };
     const slidingProfiles = new Set(['6040', '6041', '2173', '2174']);
     let selectedMeshType = localStorage.getItem('brezzaMeshType') || 'brefix-plastica';
     let lastData = null;
@@ -814,7 +825,7 @@
           const tags = items.length
             ? items.map((item) => `<span class="tag gold">${escapeHtml(item.profile)} · ${escapeHtml(item.description)}</span>`).join('')
             : '<span class="catalog-empty">Pendiente de perfiles</span>';
-          return `<div class="catalog-system"><h3>${escapeHtml(system)}</h3><div class="catalog-items">${tags}</div></div>`;
+          return `<div class="catalog-system"><h3>${escapeHtml(system)} ${closureTagHtml(system)}</h3><div class="catalog-items">${tags}</div></div>`;
         }).join('');
       } catch {
         $('profileCatalog').innerHTML = '<span class="tag gray">Catálogo no disponible</span>';
@@ -1161,6 +1172,7 @@
             meshType: meshTypeLabels[selectedMeshType] || selectedMeshType,
             profile: group.profile,
             system: rule.system,
+            closureType: closureType(rule.system),
             count,
             leafH: group.h,
             leafV: group.v,
@@ -1201,7 +1213,7 @@
         setStatus('No hay medidas calculadas para descargar.', true);
         return;
       }
-      const headers = ['Nomenclatura', 'Perfil hoja', 'Sistema', 'Cuadros detectados', 'Hoja H', 'Hoja V', 'Vano ancho', 'Vano alto', 'Perfil horizontal para fabricar', 'Pzas horizontal', 'Perfil vertical para fabricar', 'Pzas vertical', 'Medida final ancho', 'Medida final alto', 'Extra', 'Extra valor'];
+      const headers = ['Nomenclatura', 'Perfil hoja', 'Sistema', 'Tipo de cierre', 'Cuadros detectados', 'Hoja H', 'Hoja V', 'Vano ancho', 'Vano alto', 'Perfil horizontal para fabricar', 'Pzas horizontal', 'Perfil vertical para fabricar', 'Pzas vertical', 'Medida final ancho', 'Medida final alto', 'Extra', 'Extra valor'];
       const fullHeaders = ['Tipo de mosquitero', ...headers];
       const htmlRows = [
         `<tr>${fullHeaders.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr>`,
@@ -1210,6 +1222,7 @@
           <td>${escapeHtml(row.nomenclature)}</td>
           <td>${escapeHtml(row.profile)}</td>
           <td>${escapeHtml(row.system)}</td>
+          <td>${escapeHtml(row.closureType)}</td>
           <td>${row.count}</td>
           <td>${fmtMm(row.leafH)}</td>
           <td>${fmtMm(row.leafV)}</td>
@@ -1268,6 +1281,18 @@
           <span>${catalog}</span>
         </div>
       `;
+    }
+
+    function closureType(system) {
+      const base = catalogSystems.find((name) => String(system || '').startsWith(name));
+      return systemClosureTypes[base] || '';
+    }
+
+    function closureTagHtml(system) {
+      const type = closureType(system);
+      if (!type) return '';
+      const cls = type === 'Corredizo' ? 'blue' : 'green';
+      return `<span class="tag ${cls}">${escapeHtml(type)}</span>`;
     }
 
     function escapeHtml(value) {
