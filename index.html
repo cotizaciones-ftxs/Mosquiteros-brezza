@@ -147,9 +147,11 @@
 
     .mesh-panel {
       position: sticky;
-      top: 0;
-      z-index: 20;
+      top: 8px;
+      z-index: 50;
+      align-self: start;
       border-color: #b8d7eb;
+      box-shadow: 0 12px 28px rgba(21, 35, 49, .16);
     }
 
     .type-btn {
@@ -622,7 +624,7 @@
   </header>
 
   <main>
-    <section class="panel mesh-panel">
+    <section class="panel">
       <div class="upload">
         <div class="filebox" id="fileDropzone" role="button" tabindex="0" aria-label="Seleccionar o arrastrar PDF">
           <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path></svg>
@@ -651,7 +653,7 @@
       </div>
     </section>
 
-    <section class="panel">
+    <section class="panel mesh-panel">
       <p class="catalog-title">Tipo de mosquitero fijo</p>
       <div class="type-grid" id="meshTypeGroup">
         <button class="type-btn active" type="button" data-mesh-type="brefix-plastica">
