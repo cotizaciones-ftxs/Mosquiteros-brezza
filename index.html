@@ -1336,13 +1336,25 @@
       URL.revokeObjectURL(link.href);
     }
 
-    function downloadPdf() {
+    let pdfLogoBytesPromise = null;
+
+    async function loadPdfLogoBytes() {
+      if (!pdfLogoBytesPromise) {
+        pdfLogoBytesPromise = fetch('/assets/brezza-icon-blue.jpg')
+          .then((response) => response.ok ? response.arrayBuffer() : null)
+          .then((buffer) => buffer ? new Uint8Array(buffer) : null)
+          .catch(() => null);
+      }
+      return pdfLogoBytesPromise;
+    }
+
+    async function downloadPdf() {
       const rows = fabricationRows();
       if (!rows.length) {
         setStatus('No hay medidas calculadas para descargar.', true);
         return;
       }
-      const pdf = buildWorkOrderPdf(rows);
+      const pdf = buildWorkOrderPdf(rows, await loadPdfLogoBytes());
       const blob = new Blob([pdf], { type: 'application/pdf' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
@@ -1351,7 +1363,7 @@
       URL.revokeObjectURL(link.href);
     }
 
-    function buildWorkOrderPdf(rows) {
+    function buildWorkOrderPdf(rows, logoBytes) {
       rows.forEach((row, index) => {
         row.workOrderNumber = index + 1;
         row.workOrderTotal = rows.length;
@@ -1359,7 +1371,7 @@
       const pageW = 842;
       const pageH = 595;
       const margin = 28;
-      const pageRows = 6;
+      const pageRows = 5;
       const chunks = [];
       for (let i = 0; i < rows.length; i += pageRows) chunks.push(rows.slice(i, i + pageRows));
       const objects = [];
@@ -1369,12 +1381,19 @@
       };
       const fontObj = addObject('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
       const boldFontObj = addObject('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
+      const logoObj = logoBytes ? addObject([
+        `<< /Type /XObject /Subtype /Image /Width 501 /Height 500 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${logoBytes.length} >>\nstream\n`,
+        logoBytes,
+        '\nendstream',
+      ]) : null;
       const pageRefs = [];
 
       chunks.forEach((chunk, pageIndex) => {
-        const content = pdfPageContent(chunk, pageIndex + 1, chunks.length, pageW, pageH, margin);
-        const contentObj = addObject(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
-        const pageObj = addObject(`<< /Type /Page /Parent 0 0 R /MediaBox [0 0 ${pageW} ${pageH}] /Resources << /Font << /F1 ${fontObj} 0 R /F2 ${boldFontObj} 0 R >> >> /Contents ${contentObj} 0 R >>`);
+        const content = pdfPageContent(chunk, pageIndex + 1, chunks.length, pageW, pageH, margin, Boolean(logoObj));
+        const contentLength = pdfByteLength(content);
+        const contentObj = addObject(`<< /Length ${contentLength} >>\nstream\n${content}\nendstream`);
+        const xObject = logoObj ? `/XObject << /Logo ${logoObj} 0 R >>` : '';
+        const pageObj = addObject(`<< /Type /Page /Parent 0 0 R /MediaBox [0 0 ${pageW} ${pageH}] /Resources << /Font << /F1 ${fontObj} 0 R /F2 ${boldFontObj} 0 R >> ${xObject} >> /Contents ${contentObj} 0 R >>`);
         pageRefs.push(pageObj);
       });
 
@@ -1383,22 +1402,34 @@
         objects[ref - 1] = objects[ref - 1].replace('/Parent 0 0 R', `/Parent ${pagesObj} 0 R`);
       });
       const catalogObj = addObject(`<< /Type /Catalog /Pages ${pagesObj} 0 R >>`);
-      let pdf = '%PDF-1.4\n';
+      const encoder = new TextEncoder();
+      const parts = [encoder.encode('%PDF-1.4\n')];
+      let pdfLength = parts[0].length;
       const offsets = [0];
       objects.forEach((body, index) => {
-        offsets.push(pdf.length);
-        pdf += `${index + 1} 0 obj\n${body}\nendobj\n`;
+        offsets.push(pdfLength);
+        const objectParts = Array.isArray(body) ? body : [body];
+        const packed = [
+          encoder.encode(`${index + 1} 0 obj\n`),
+          ...objectParts.map((part) => part instanceof Uint8Array ? part : encoder.encode(part)),
+          encoder.encode('\nendobj\n'),
+        ];
+        packed.forEach((part) => {
+          parts.push(part);
+          pdfLength += part.length;
+        });
       });
-      const xref = pdf.length;
-      pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+      const xref = pdfLength;
+      let trailer = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
       offsets.slice(1).forEach((offset) => {
-        pdf += `${String(offset).padStart(10, '0')} 00000 n \n`;
+        trailer += `${String(offset).padStart(10, '0')} 00000 n \n`;
       });
-      pdf += `trailer\n<< /Size ${objects.length + 1} /Root ${catalogObj} 0 R >>\nstartxref\n${xref}\n%%EOF`;
-      return pdf;
+      trailer += `trailer\n<< /Size ${objects.length + 1} /Root ${catalogObj} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+      parts.push(encoder.encode(trailer));
+      return concatPdfBytes(parts);
     }
 
-    function pdfPageContent(rows, page, totalPages, pageW, pageH, margin) {
+    function pdfPageContent(rows, page, totalPages, pageW, pageH, margin, hasLogo) {
       const commands = [];
       const line = (x1, y1, x2, y2) => commands.push(`${x1} ${y1} m ${x2} ${y2} l S`);
       const rect = (x, y, w, h) => commands.push(`${x} ${y} ${w} ${h} re S`);
@@ -1406,15 +1437,18 @@
       const text = (value, x, y, size = 9, bold = false) => {
         commands.push(`BT /${bold ? 'F2' : 'F1'} ${size} Tf ${x} ${y} Td (${pdfEscape(pdfText(value))}) Tj ET`);
       };
-      const headerY = pageH - margin - 8;
-      fillRect(margin, pageH - 75, pageW - margin * 2, 50, '0.04 0.32 0.52');
+      const info = lastData?.documentInfo || {};
+      const headerY = pageH - margin - 10;
+      fillRect(margin, pageH - 92, pageW - margin * 2, 66, '0.04 0.32 0.52');
       commands.push('1 1 1 rg');
-      text('HTF MOSQUITEROS BREZZA', margin + 12, headerY, 18, true);
-      text(`Archivo: ${lastData?.fileName || '-'}    Tipo: ${meshTypeLabels[selectedMeshType] || selectedMeshType}`, margin + 12, headerY - 18, 9);
-      text(`Total mosquiteros: ${rows[0]?.workOrderTotal || 0}    Fecha: ${new Date().toLocaleDateString('es-MX')}    Pagina ${page} de ${totalPages}`, pageW - 360, headerY - 18, 9);
+      text('HTF MOSQUITEROS BREZZA', margin + 12, headerY, 17, true);
+      text(`Presupuesto no.: ${info.budget || '-'}    Cliente: ${info.client || '-'}`, margin + 12, headerY - 17, 9, true);
+      text(`Archivo: ${lastData?.fileName || '-'}    Tipo: ${meshTypeLabels[selectedMeshType] || selectedMeshType}`, margin + 12, headerY - 33, 8);
+      text(`Total mosquiteros: ${rows[0]?.workOrderTotal || 0}    Fecha: ${new Date().toLocaleDateString('es-MX')}    Pagina ${page} de ${totalPages}`, pageW - 340, headerY - 33, 8);
+      if (hasLogo) commands.push(`q 45 0 0 45 ${pageW - margin - 58} ${pageH - 82} cm /Logo Do Q`);
       commands.push('0 0 0 rg');
 
-      let y = pageH - 100;
+      let y = pageH - 112;
       rows.forEach((row, index) => {
         const h = 72;
         rect(margin, y - h + 8, pageW - margin * 2, h);
@@ -1432,6 +1466,21 @@
       line(margin, 28, pageW - margin, 28);
       text('Documento generado desde Extractor HTF Mosquiteros Brezza', margin, 14, 7);
       return commands.join('\n');
+    }
+
+    function pdfByteLength(value) {
+      return new TextEncoder().encode(value).length;
+    }
+
+    function concatPdfBytes(parts) {
+      const total = parts.reduce((sum, part) => sum + part.length, 0);
+      const output = new Uint8Array(total);
+      let offset = 0;
+      parts.forEach((part) => {
+        output.set(part, offset);
+        offset += part.length;
+      });
+      return output;
     }
 
     function pdfText(value) {

@@ -283,12 +283,34 @@ def find_mosquito_notes(block_lines: list[dict]) -> list[dict]:
     return notes
 
 
+def extract_document_info(lines: list[dict]) -> dict:
+    budget = ""
+    client = ""
+    for line in lines:
+        text = re.sub(r"\s+", " ", line["text"]).strip()
+        plain = plain_text(text)
+        if not budget:
+            match = re.search(r"Presupuesto\s*n[º°o]?\s*[:#-]?\s*([A-Z0-9,./-]+)", plain, re.I)
+            if match:
+                budget = match.group(1).strip(" .,-")
+        if not client:
+            match = re.search(r"Cliente\s*:\s*(.+)$", text, re.I)
+            if match:
+                value = match.group(1).strip()
+                value = re.split(r"\s+(?:Codigo|Nomenclatura|Hoja\s+de\s+Trabajo|Presupuesto)\s*:?", value, 1, flags=re.I)[0]
+                client = value.strip(" .,-")
+        if budget and client:
+            break
+    return {"budget": budget, "client": client}
+
+
 def extract_pdf(path: Path, display_name: str | None = None) -> dict:
     all_lines = []
     with pdfplumber.open(path) as pdf:
         for page in pdf.pages:
             all_lines.extend(line_items(page))
 
+    document_info = extract_document_info(all_lines)
     blocks = split_window_blocks(all_lines)
     windows = []
     for index, block in enumerate(blocks, start=1):
@@ -321,6 +343,7 @@ def extract_pdf(path: Path, display_name: str | None = None) -> dict:
         "fileName": display_name or path.name,
         "windowCount": len(windows),
         "mosquitoCount": len(mosquito_windows),
+        "documentInfo": document_info,
         "windows": windows,
         "mosquitoWindows": mosquito_windows,
     }
