@@ -785,6 +785,10 @@
           <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h5"></path></svg>
           Descargar HTF Mosquiteros PDF
         </button>
+        <button class="btn secondary" id="downloadCutListBtn" type="button">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path></svg>
+          Descargar lista de cortes
+        </button>
       </div>
     </section>
   </main>
@@ -1363,6 +1367,59 @@
       URL.revokeObjectURL(link.href);
     }
 
+    async function downloadCutListPdf() {
+      const rows = cutListRows(fabricationRows());
+      if (!rows.length) {
+        setStatus('No hay cortes calculados para descargar.', true);
+        return;
+      }
+      const pdf = buildCutListPdf(rows, await loadPdfLogoBytes());
+      const blob = new Blob([pdf], { type: 'application/pdf' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = cutListPdfFileName();
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    function cutListRows(rows) {
+      const grouped = new Map();
+      rows.forEach((row) => {
+        [
+          { use: 'Horizontal', length: row.cutW, qty: row.cutQty },
+          { use: 'Vertical', length: row.cutH, qty: row.cutQty },
+        ].forEach((cut) => {
+          if (!Number.isFinite(cut.length) || !Number.isFinite(cut.qty) || cut.qty <= 0) return;
+          const key = [selectedMeshType, fmtMm(cut.length)].join('|');
+          const current = grouped.get(key) || {
+            meshType: row.meshType,
+            length: cut.length,
+            qty: 0,
+            uses: new Set(),
+            systems: new Set(),
+            references: new Set(),
+          };
+          current.qty += cut.qty;
+          current.uses.add(cut.use);
+          if (row.system) current.systems.add(row.system);
+          const ref = [row.nomenclature || 'Sin nomenclatura', row.pieceLabel].filter(Boolean).join(' - ');
+          current.references.add(ref);
+          grouped.set(key, current);
+        });
+      });
+      return Array.from(grouped.values())
+        .map((item) => ({
+          meshType: item.meshType,
+          length: item.length,
+          qty: item.qty,
+          use: Array.from(item.uses).join(' / '),
+          systems: Array.from(item.systems).join(', '),
+          references: Array.from(item.references).slice(0, 5).join('; '),
+          extraRefs: Math.max(0, item.references.size - 5),
+        }))
+        .sort((a, b) => a.length - b.length || a.use.localeCompare(b.use));
+    }
+
     function buildWorkOrderPdf(rows, logoBytes) {
       rows.forEach((row, index) => {
         row.workOrderNumber = index + 1;
@@ -1392,6 +1449,67 @@
         const content = pdfPageContent(chunk, pageIndex + 1, chunks.length, pageW, pageH, margin, Boolean(logoObj));
         const contentLength = pdfByteLength(content);
         const contentObj = addObject(`<< /Length ${contentLength} >>\nstream\n${content}\nendstream`);
+        const xObject = logoObj ? `/XObject << /Logo ${logoObj} 0 R >>` : '';
+        const pageObj = addObject(`<< /Type /Page /Parent 0 0 R /MediaBox [0 0 ${pageW} ${pageH}] /Resources << /Font << /F1 ${fontObj} 0 R /F2 ${boldFontObj} 0 R >> ${xObject} >> /Contents ${contentObj} 0 R >>`);
+        pageRefs.push(pageObj);
+      });
+
+      const pagesObj = addObject(`<< /Type /Pages /Kids [${pageRefs.map((ref) => `${ref} 0 R`).join(' ')}] /Count ${pageRefs.length} >>`);
+      pageRefs.forEach((ref) => {
+        objects[ref - 1] = objects[ref - 1].replace('/Parent 0 0 R', `/Parent ${pagesObj} 0 R`);
+      });
+      const catalogObj = addObject(`<< /Type /Catalog /Pages ${pagesObj} 0 R >>`);
+      const encoder = new TextEncoder();
+      const parts = [encoder.encode('%PDF-1.4\n')];
+      let pdfLength = parts[0].length;
+      const offsets = [0];
+      objects.forEach((body, index) => {
+        offsets.push(pdfLength);
+        const objectParts = Array.isArray(body) ? body : [body];
+        const packed = [
+          encoder.encode(`${index + 1} 0 obj\n`),
+          ...objectParts.map((part) => part instanceof Uint8Array ? part : encoder.encode(part)),
+          encoder.encode('\nendobj\n'),
+        ];
+        packed.forEach((part) => {
+          parts.push(part);
+          pdfLength += part.length;
+        });
+      });
+      const xref = pdfLength;
+      let trailer = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+      offsets.slice(1).forEach((offset) => {
+        trailer += `${String(offset).padStart(10, '0')} 00000 n \n`;
+      });
+      trailer += `trailer\n<< /Size ${objects.length + 1} /Root ${catalogObj} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+      parts.push(encoder.encode(trailer));
+      return concatPdfBytes(parts);
+    }
+
+    function buildCutListPdf(rows, logoBytes) {
+      const pageW = 842;
+      const pageH = 595;
+      const margin = 28;
+      const pageRows = 18;
+      const chunks = [];
+      for (let i = 0; i < rows.length; i += pageRows) chunks.push(rows.slice(i, i + pageRows));
+      const objects = [];
+      const addObject = (body) => {
+        objects.push(body);
+        return objects.length;
+      };
+      const fontObj = addObject('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+      const boldFontObj = addObject('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
+      const logoObj = logoBytes ? addObject([
+        `<< /Type /XObject /Subtype /Image /Width 501 /Height 500 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${logoBytes.length} >>\nstream\n`,
+        logoBytes,
+        '\nendstream',
+      ]) : null;
+      const pageRefs = [];
+
+      chunks.forEach((chunk, pageIndex) => {
+        const content = cutListPdfPageContent(chunk, rows, pageIndex + 1, chunks.length, pageW, pageH, margin, Boolean(logoObj));
+        const contentObj = addObject(`<< /Length ${pdfByteLength(content)} >>\nstream\n${content}\nendstream`);
         const xObject = logoObj ? `/XObject << /Logo ${logoObj} 0 R >>` : '';
         const pageObj = addObject(`<< /Type /Page /Parent 0 0 R /MediaBox [0 0 ${pageW} ${pageH}] /Resources << /Font << /F1 ${fontObj} 0 R /F2 ${boldFontObj} 0 R >> ${xObject} >> /Contents ${contentObj} 0 R >>`);
         pageRefs.push(pageObj);
@@ -1469,6 +1587,51 @@
       return commands.join('\n');
     }
 
+    function cutListPdfPageContent(rows, allRows, page, totalPages, pageW, pageH, margin, hasLogo) {
+      const commands = [];
+      const line = (x1, y1, x2, y2) => commands.push(`${x1} ${y1} m ${x2} ${y2} l S`);
+      const fillRect = (x, y, w, h, color = '0.90 0.95 0.99') => commands.push(`${color} rg ${x} ${y} ${w} ${h} re f 0 0 0 RG`);
+      const text = (value, x, y, size = 9, bold = false) => {
+        commands.push(`BT /${bold ? 'F2' : 'F1'} ${size} Tf ${x} ${y} Td (${pdfEscape(pdfText(value))}) Tj ET`);
+      };
+      const info = lastData?.documentInfo || {};
+      const totalPieces = allRows.reduce((sum, row) => sum + row.qty, 0);
+      const headerY = pageH - margin - 22;
+      fillRect(margin, pageH - 112, pageW - margin * 2, 86, '0.04 0.32 0.52');
+      commands.push('1 1 1 rg');
+      text('LISTA DE CORTES MOSQUITEROS', margin + 12, headerY, 17, true);
+      text(`Presupuesto no.: ${info.budget || '-'}    Cliente: ${info.client || '-'}`, margin + 12, headerY - 17, 9, true);
+      text(`Archivo: ${lastData?.fileName || '-'}`, margin + 12, headerY - 33, 8);
+      text(`Tipo: ${meshTypeLabels[selectedMeshType] || selectedMeshType}`, margin + 12, headerY - 49, 10, true);
+      text(`Total piezas a cortar: ${totalPieces}    Fecha: ${new Date().toLocaleDateString('es-MX')}    Pagina ${page} de ${totalPages}`, pageW - 360, headerY - 49, 8);
+      if (hasLogo) commands.push(`q 54 0 0 54 ${pageW - margin - 68} ${pageH - 96} cm /Logo Do Q`);
+      commands.push('0 0 0 rg');
+
+      let y = pageH - 132;
+      fillRect(margin, y - 18, pageW - margin * 2, 20, '0.88 0.94 0.98');
+      text('Cantidad', margin + 8, y - 12, 8, true);
+      text('Medida de corte', margin + 90, y - 12, 8, true);
+      text('Uso', margin + 205, y - 12, 8, true);
+      text('Sistema', margin + 330, y - 12, 8, true);
+      text('Referencia', margin + 510, y - 12, 8, true);
+      y -= 32;
+
+      rows.forEach((row) => {
+        line(margin, y + 10, pageW - margin, y + 10);
+        text(`${row.qty} pzas`, margin + 8, y, 9, true);
+        text(`${fmtMm(row.length)} mm`, margin + 90, y, 10, true);
+        text(row.use, margin + 205, y, 8);
+        text(row.systems || '-', margin + 330, y, 8);
+        const refs = row.extraRefs ? `${row.references}; +${row.extraRefs} mas` : row.references;
+        text(refs || '-', margin + 510, y, 7);
+        y -= 22;
+      });
+
+      line(margin, 28, pageW - margin, 28);
+      text('Documento generado desde Extractor HTF Mosquiteros Brezza', margin, 14, 7);
+      return commands.join('\n');
+    }
+
     function pdfByteLength(value) {
       return new TextEncoder().encode(value).length;
     }
@@ -1501,6 +1664,12 @@
       if (selectedMeshType === 'brefix-45') return 'htf-mosquiteros-brefix-45.pdf';
       if (selectedMeshType === 'cuprum') return 'htf-mosquiteros-cuprum.pdf';
       return 'htf-mosquiteros-brefix-escuadra-plastica.pdf';
+    }
+
+    function cutListPdfFileName() {
+      if (selectedMeshType === 'brefix-45') return 'lista-cortes-mosquiteros-brefix-45.pdf';
+      if (selectedMeshType === 'cuprum') return 'lista-cortes-mosquiteros-cuprum.pdf';
+      return 'lista-cortes-mosquiteros-brefix-escuadra-plastica.pdf';
     }
 
     function parseLocaleNumber(value) {
@@ -1608,6 +1777,7 @@
     });
     $('downloadExcelBtn').addEventListener('click', downloadExcel);
     $('downloadPdfBtn').addEventListener('click', downloadPdf);
+    $('downloadCutListBtn').addEventListener('click', downloadCutListPdf);
     $('rowsBody').addEventListener('click', (event) => {
       const pieceButton = event.target.closest('[data-piece-key]');
       if (pieceButton) {
