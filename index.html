@@ -1176,8 +1176,6 @@
       if (!lastData || !rules) return [];
       const rows = [];
       (lastData.mosquitoWindows || []).forEach((item) => {
-        const profiles = item.leafProfiles || [];
-        const alert = isLargeSlidingWindow(profiles, maxWindowPieceCount(item)) ? 'Revisar: mas de 3 hojas' : '';
         groupsForFabrication(item.leafProfiles || [], effectiveWindowPieceCount(item)).forEach((group) => {
           const rule = rules[group.profile];
           if (!rule || !Number.isFinite(group.h) || !Number.isFinite(group.v)) return;
@@ -1211,8 +1209,7 @@
             cutH,
             cutQty,
             extraLabel: extra ? extra.label : '',
-            extraValue: extra ? extra.value : '',
-            alert
+            extraValue: extra ? extra.value : ''
           });
         });
       });
@@ -1352,11 +1349,9 @@
       let y = pageH - 100;
       rows.forEach((row, index) => {
         const h = 72;
-        if (row.alert) fillRect(margin, y - h + 8, pageW - margin * 2, h, '1 0.94 0.94');
         rect(margin, y - h + 8, pageW - margin * 2, h);
         text(`${row.windowIndex || index + 1}. ${row.nomenclature || 'Sin nomenclatura'}   ${row.pieceLabel}`, margin + 8, y - 8, 11, true);
         text(`${row.profile} | ${row.system} | ${row.closureType} | ${row.meshType}`, margin + 8, y - 24, 8);
-        if (row.alert) text(row.alert, pageW - 160, y - 8, 8, true);
 
         text(`Hoja HTF: H ${fmtMm(row.leafH)} mm / V ${fmtMm(row.leafV)} mm`, margin + 8, y - 42, 8);
         text(`Vano: ${fmtMm(row.vanoW)} x ${fmtMm(row.vanoH)} mm`, margin + 220, y - 42, 8);
