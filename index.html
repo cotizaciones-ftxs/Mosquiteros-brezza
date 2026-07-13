@@ -289,6 +289,15 @@
       line-height: 1.35;
     }
 
+    tr.row-alert td {
+      background: #fff1f1;
+      border-bottom-color: #efb7b7;
+    }
+
+    tr.row-alert td:first-child {
+      box-shadow: inset 4px 0 0 var(--red);
+    }
+
     th:nth-child(4),
     td:nth-child(4) {
       min-width: 470px;
@@ -885,12 +894,15 @@
       const detectedPieces = windowPieceCount(profiles);
       const maxPieces = maxWindowPieceCount(item);
       const piecesCell = detectedPieces ? pieceControlHtml(key, pieces, maxPieces) : '<span class="tag gray">-</span>';
+      const needsSlidingReview = isLargeSlidingWindow(profiles, maxPieces);
+      const reviewTag = needsSlidingReview ? '<div class="status"><span class="tag red">Revisar: mas de 3 hojas</span></div>' : '';
       return `
-        <tr>
+        <tr class="${needsSlidingReview ? 'row-alert' : ''}">
           <td>${item.index}</td>
           <td>
             <span class="tag blue">${escapeHtml(item.nomenclature || 'Sin nomenclatura')}</span>
             <div class="status">Páginas: ${(item.pages || []).join(', ')}</div>
+            ${reviewTag}
           </td>
           <td>
             <div class="notes">
@@ -1052,6 +1064,11 @@
 
     function isSlidingWindow(profiles) {
       return profiles.some((profile) => slidingProfiles.has(profile.profile));
+    }
+
+    function isLargeSlidingWindow(profiles, maxPieces = null) {
+      const total = Number.isFinite(maxPieces) ? maxPieces : windowPieceCount(profiles);
+      return isSlidingWindow(profiles) && total > 3;
     }
 
     function groupsForFabrication(profiles, targetCount = null, key = '') {
