@@ -1697,7 +1697,6 @@
         text(shortPdfText(row.cutText, 105), barX, barY - 12, 7, true);
         const refs = row.extraRefs ? `${row.references}; +${row.extraRefs} mas` : row.references;
         text(shortPdfText(refs || '-', 110), barX, barY - 24, 6);
-        line(margin, barY - 44, pageW - margin, barY - 44);
         y -= 76;
       });
 
