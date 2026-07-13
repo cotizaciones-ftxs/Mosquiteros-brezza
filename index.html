@@ -145,6 +145,13 @@
       gap: 10px;
     }
 
+    .mesh-panel {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-color: #b8d7eb;
+    }
+
     .type-btn {
       min-height: 74px;
       padding: 12px;
@@ -170,8 +177,14 @@
 
     .type-btn.active {
       border-color: var(--accent);
-      background: var(--soft);
-      box-shadow: 0 0 0 3px rgba(11, 116, 184, .14);
+      color: #063a63;
+      background: #d7ecfb;
+      box-shadow: inset 0 0 0 2px var(--accent), 0 0 0 3px rgba(11, 116, 184, .16);
+    }
+
+    .type-btn.active strong,
+    .type-btn.active span {
+      color: #063a63;
     }
 
     .icon {
@@ -609,7 +622,7 @@
   </header>
 
   <main>
-    <section class="panel">
+    <section class="panel mesh-panel">
       <div class="upload">
         <div class="filebox" id="fileDropzone" role="button" tabindex="0" aria-label="Seleccionar o arrastrar PDF">
           <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path></svg>
@@ -1062,11 +1075,10 @@
     }
 
     function maxWindowPieceCount(item) {
-      const key = rowKey(item);
       const profiles = item.leafProfiles || [];
-      const available = expandedProfileGroups(profiles).filter((group) => !discardedCardSet(key).has(cardToken(group)));
-      if (isSlidingWindow(profiles)) return available.length || windowPieceCount(profiles);
-      return available.length;
+      const total = expandedProfileGroups(profiles).length;
+      if (isSlidingWindow(profiles)) return total || windowPieceCount(profiles);
+      return total;
     }
 
     function expandedProfileGroups(profiles) {
@@ -1320,6 +1332,7 @@
         const current = effectiveWindowPieceCount(item || { leafProfiles: [] });
         const delta = Number(pieceButton.dataset.pieceDelta) || 0;
         const max = maxWindowPieceCount(item || { leafProfiles: [] });
+        if (delta > 0 && discardedCards[key]?.length) discardedCards[key].pop();
         pieceOverrides[key] = Math.min(max, Math.max(0, current + delta));
         render(lastData);
         return;
