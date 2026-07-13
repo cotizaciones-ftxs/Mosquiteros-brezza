@@ -83,6 +83,22 @@
       padding: 16px;
     }
 
+    .review-bar {
+      position: sticky;
+      top: 0;
+      z-index: 60;
+      display: grid;
+      gap: 10px;
+      padding: 10px 0;
+      background: rgba(242, 247, 251, .96);
+      backdrop-filter: blur(8px);
+    }
+
+    .review-bar .panel,
+    .review-bar .cards {
+      box-shadow: 0 10px 24px rgba(21, 35, 49, .12);
+    }
+
     .upload {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
@@ -146,12 +162,7 @@
     }
 
     .mesh-panel {
-      position: sticky;
-      top: 8px;
-      z-index: 50;
-      align-self: start;
       border-color: #b8d7eb;
-      box-shadow: 0 12px 28px rgba(21, 35, 49, .16);
     }
 
     .type-btn {
@@ -637,52 +648,54 @@
   </header>
 
   <main>
-    <section class="panel">
-      <div class="upload">
-        <div class="filebox" id="fileDropzone" role="button" tabindex="0" aria-label="Seleccionar o arrastrar PDF">
-          <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path></svg>
-          <input id="pdfInput" type="file" accept="application/pdf,.pdf">
+    <div class="review-bar">
+      <section class="panel">
+        <div class="upload">
+          <div class="filebox" id="fileDropzone" role="button" tabindex="0" aria-label="Seleccionar o arrastrar PDF">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path></svg>
+            <input id="pdfInput" type="file" accept="application/pdf,.pdf">
+          </div>
+          <button class="btn" id="analyzeBtn" type="button">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+            Analizar PDF
+          </button>
         </div>
-        <button class="btn" id="analyzeBtn" type="button">
-          <svg class="icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-          Analizar PDF
-        </button>
-      </div>
-      <div class="status" id="status">Sube una HTF normal en PDF. Los colores no son necesarios; solo fueron referencia visual para ubicar los datos.</div>
-    </section>
+        <div class="status" id="status">Sube una HTF normal en PDF. Los colores no son necesarios; solo fueron referencia visual para ubicar los datos.</div>
+      </section>
 
-    <section class="cards" id="metrics" hidden>
-      <div class="metric">
-        <span>Archivo</span>
-        <strong id="fileName">-</strong>
-      </div>
-      <div class="metric">
-        <span>Ventanas detectadas</span>
-        <strong id="windowCount">0</strong>
-      </div>
-      <div class="metric">
-        <span>Con mosquitero</span>
-        <strong id="mosquitoCount">0</strong>
-      </div>
-    </section>
+      <section class="cards" id="metrics" hidden>
+        <div class="metric">
+          <span>Archivo</span>
+          <strong id="fileName">-</strong>
+        </div>
+        <div class="metric">
+          <span>Ventanas detectadas</span>
+          <strong id="windowCount">0</strong>
+        </div>
+        <div class="metric">
+          <span>Con mosquitero</span>
+          <strong id="mosquitoCount">0</strong>
+        </div>
+      </section>
 
-    <section class="panel mesh-panel">
-      <p class="catalog-title">Tipo de mosquitero fijo</p>
-      <div class="type-grid" id="meshTypeGroup">
-        <button class="type-btn active" type="button" data-mesh-type="brefix-plastica">
-          <strong>Brefix</strong>
-          <span>Con escuadra plástica</span>
-        </button>
-        <button class="type-btn" type="button" data-mesh-type="brefix-45">
-          <strong>Brefix</strong>
-          <span>Con cortes a 45</span>
-        </button>
-        <button class="type-btn" type="button" data-mesh-type="cuprum">
-          <strong>Cuprum</strong>
-          <span>Fórmulas desde Excel</span>
-        </button>
-      </div>
-    </section>
+      <section class="panel mesh-panel">
+        <p class="catalog-title">Tipo de mosquitero fijo</p>
+        <div class="type-grid" id="meshTypeGroup">
+          <button class="type-btn active" type="button" data-mesh-type="brefix-plastica">
+            <strong>Brefix</strong>
+            <span>Con escuadra plástica</span>
+          </button>
+          <button class="type-btn" type="button" data-mesh-type="brefix-45">
+            <strong>Brefix</strong>
+            <span>Con cortes a 45</span>
+          </button>
+          <button class="type-btn" type="button" data-mesh-type="cuprum">
+            <strong>Cuprum</strong>
+            <span>Fórmulas desde Excel</span>
+          </button>
+        </div>
+      </section>
+    </div>
 
     <section class="panel catalog-panel collapsed" id="catalogPanel">
       <div class="catalog-header">
