@@ -717,6 +717,10 @@
           <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
           Descargar lista Excel
         </button>
+        <button class="btn secondary" id="downloadPdfBtn" type="button">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h5"></path></svg>
+          Descargar HTF Mosquiteros PDF
+        </button>
       </div>
     </section>
   </main>
@@ -1172,6 +1176,8 @@
       if (!lastData || !rules) return [];
       const rows = [];
       (lastData.mosquitoWindows || []).forEach((item) => {
+        const profiles = item.leafProfiles || [];
+        const alert = isLargeSlidingWindow(profiles, maxWindowPieceCount(item)) ? 'Revisar: mas de 3 hojas' : '';
         groupsForFabrication(item.leafProfiles || [], effectiveWindowPieceCount(item)).forEach((group) => {
           const rule = rules[group.profile];
           if (!rule || !Number.isFinite(group.h) || !Number.isFinite(group.v)) return;
@@ -1184,12 +1190,16 @@
           const count = group.count || 1;
           const cutQty = count * 2;
           const extra = calcExtra(rule, mosqW, mosqH, count);
+          const pieceLabel = group.pieceTotal > 1 ? `Cuadro ${group.pieceIndex} de ${group.pieceTotal}` : 'Cuadro 1';
           rows.push({
+            windowIndex: item.index,
             nomenclature: item.nomenclature || '',
+            pages: (item.pages || []).join(', '),
             meshType: meshTypeLabels[selectedMeshType] || selectedMeshType,
             profile: group.profile,
             system: rule.system,
             closureType: closureType(rule.system),
+            pieceLabel,
             count,
             leafH: group.h,
             leafV: group.v,
@@ -1201,7 +1211,8 @@
             cutH,
             cutQty,
             extraLabel: extra ? extra.label : '',
-            extraValue: extra ? extra.value : ''
+            extraValue: extra ? extra.value : '',
+            alert
           });
         });
       });
@@ -1262,6 +1273,121 @@
       link.download = selectedMeshType === 'brefix-45' ? 'medidas-mosquiteros-brefix-45.xls' : selectedMeshType === 'cuprum' ? 'medidas-mosquiteros-cuprum.xls' : 'medidas-mosquiteros-brefix-escuadra-plastica.xls';
       link.click();
       URL.revokeObjectURL(link.href);
+    }
+
+    function downloadPdf() {
+      const rows = fabricationRows();
+      if (!rows.length) {
+        setStatus('No hay medidas calculadas para descargar.', true);
+        return;
+      }
+      const pdf = buildWorkOrderPdf(rows);
+      const blob = new Blob([pdf], { type: 'application/pdf' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = pdfFileName();
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    function buildWorkOrderPdf(rows) {
+      const pageW = 842;
+      const pageH = 595;
+      const margin = 28;
+      const pageRows = 6;
+      const chunks = [];
+      for (let i = 0; i < rows.length; i += pageRows) chunks.push(rows.slice(i, i + pageRows));
+      const objects = [];
+      const addObject = (body) => {
+        objects.push(body);
+        return objects.length;
+      };
+      const fontObj = addObject('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+      const boldFontObj = addObject('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
+      const pageRefs = [];
+
+      chunks.forEach((chunk, pageIndex) => {
+        const content = pdfPageContent(chunk, pageIndex + 1, chunks.length, pageW, pageH, margin);
+        const contentObj = addObject(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+        const pageObj = addObject(`<< /Type /Page /Parent 0 0 R /MediaBox [0 0 ${pageW} ${pageH}] /Resources << /Font << /F1 ${fontObj} 0 R /F2 ${boldFontObj} 0 R >> >> /Contents ${contentObj} 0 R >>`);
+        pageRefs.push(pageObj);
+      });
+
+      const pagesObj = addObject(`<< /Type /Pages /Kids [${pageRefs.map((ref) => `${ref} 0 R`).join(' ')}] /Count ${pageRefs.length} >>`);
+      pageRefs.forEach((ref) => {
+        objects[ref - 1] = objects[ref - 1].replace('/Parent 0 0 R', `/Parent ${pagesObj} 0 R`);
+      });
+      const catalogObj = addObject(`<< /Type /Catalog /Pages ${pagesObj} 0 R >>`);
+      let pdf = '%PDF-1.4\n';
+      const offsets = [0];
+      objects.forEach((body, index) => {
+        offsets.push(pdf.length);
+        pdf += `${index + 1} 0 obj\n${body}\nendobj\n`;
+      });
+      const xref = pdf.length;
+      pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+      offsets.slice(1).forEach((offset) => {
+        pdf += `${String(offset).padStart(10, '0')} 00000 n \n`;
+      });
+      pdf += `trailer\n<< /Size ${objects.length + 1} /Root ${catalogObj} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+      return pdf;
+    }
+
+    function pdfPageContent(rows, page, totalPages, pageW, pageH, margin) {
+      const commands = [];
+      const line = (x1, y1, x2, y2) => commands.push(`${x1} ${y1} m ${x2} ${y2} l S`);
+      const rect = (x, y, w, h) => commands.push(`${x} ${y} ${w} ${h} re S`);
+      const fillRect = (x, y, w, h, color = '0.90 0.95 0.99') => commands.push(`${color} rg ${x} ${y} ${w} ${h} re f 0 0 0 RG`);
+      const text = (value, x, y, size = 9, bold = false) => {
+        commands.push(`BT /${bold ? 'F2' : 'F1'} ${size} Tf ${x} ${y} Td (${pdfEscape(pdfText(value))}) Tj ET`);
+      };
+      const headerY = pageH - margin - 8;
+      fillRect(margin, pageH - 75, pageW - margin * 2, 50, '0.04 0.32 0.52');
+      commands.push('1 1 1 rg');
+      text('HTF MOSQUITEROS BREZZA', margin + 12, headerY, 18, true);
+      text(`Archivo: ${lastData?.fileName || '-'}    Tipo: ${meshTypeLabels[selectedMeshType] || selectedMeshType}`, margin + 12, headerY - 18, 9);
+      text(`Fecha: ${new Date().toLocaleDateString('es-MX')}    Pagina ${page} de ${totalPages}`, pageW - 260, headerY - 18, 9);
+      commands.push('0 0 0 rg');
+
+      let y = pageH - 100;
+      rows.forEach((row, index) => {
+        const h = 72;
+        if (row.alert) fillRect(margin, y - h + 8, pageW - margin * 2, h, '1 0.94 0.94');
+        rect(margin, y - h + 8, pageW - margin * 2, h);
+        text(`${row.windowIndex || index + 1}. ${row.nomenclature || 'Sin nomenclatura'}   ${row.pieceLabel}`, margin + 8, y - 8, 11, true);
+        text(`${row.profile} | ${row.system} | ${row.closureType} | ${row.meshType}`, margin + 8, y - 24, 8);
+        if (row.alert) text(row.alert, pageW - 160, y - 8, 8, true);
+
+        text(`Hoja HTF: H ${fmtMm(row.leafH)} mm / V ${fmtMm(row.leafV)} mm`, margin + 8, y - 42, 8);
+        text(`Vano: ${fmtMm(row.vanoW)} x ${fmtMm(row.vanoH)} mm`, margin + 220, y - 42, 8);
+        text(`Medida final: ${fmtMm(row.mosqW)} x ${fmtMm(row.mosqH)} mm`, margin + 400, y - 42, 8);
+        text(`Perfil horizontal: ${row.cutQty} pzas x ${fmtMm(row.cutW)} mm`, margin + 8, y - 58, 8, true);
+        text(`Perfil vertical: ${row.cutQty} pzas x ${fmtMm(row.cutH)} mm`, margin + 260, y - 58, 8, true);
+        if (row.extraLabel) text(`${row.extraLabel}: ${row.extraValue}`, margin + 500, y - 58, 8);
+        y -= h + 8;
+      });
+      line(margin, 28, pageW - margin, 28);
+      text('Documento generado desde Extractor HTF Mosquiteros Brezza', margin, 14, 7);
+      return commands.join('\n');
+    }
+
+    function pdfText(value) {
+      return String(value ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^\x20-\x7E]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function pdfEscape(value) {
+      return String(value).replace(/[\\()]/g, '\\$&');
+    }
+
+    function pdfFileName() {
+      if (selectedMeshType === 'brefix-45') return 'htf-mosquiteros-brefix-45.pdf';
+      if (selectedMeshType === 'cuprum') return 'htf-mosquiteros-cuprum.pdf';
+      return 'htf-mosquiteros-brefix-escuadra-plastica.pdf';
     }
 
     function parseLocaleNumber(value) {
@@ -1368,6 +1494,7 @@
       $('catalogToggle').textContent = collapsed ? 'Ver perfiles' : 'Ocultar perfiles';
     });
     $('downloadExcelBtn').addEventListener('click', downloadExcel);
+    $('downloadPdfBtn').addEventListener('click', downloadPdf);
     $('rowsBody').addEventListener('click', (event) => {
       const pieceButton = event.target.closest('[data-piece-key]');
       if (pieceButton) {
