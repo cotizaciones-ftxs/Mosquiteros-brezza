@@ -524,6 +524,24 @@
       margin-top: 2px;
     }
 
+    .cut-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 34px;
+      margin: 3px 0 5px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      border: 1px solid #a9d1ea;
+      background: #eef8ff;
+      color: var(--accent-dark);
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      white-space: nowrap;
+    }
+
     .has-tip {
       cursor: help;
       position: relative;
@@ -1160,8 +1178,8 @@
             <div class="calc-values">
               <span class="wide has-tip" data-tip="${escapeHtmlAttr(`Medidas tomadas de la HTF en 01TRONZADORAS DE PERFIL: hoja horizontal ${fmtMm(group.h)} mm y hoja vertical ${fmtMm(group.v)} mm.`)}">Medida hoja HTF<strong>H ${fmtMm(group.h)} mm / V ${fmtMm(group.v)} mm</strong></span>
               <span class="wide has-tip" data-tip="${escapeHtmlAttr(`Vano = hoja H ${fmtMm(group.h)} ${signed(rule.vanoW)} y hoja V ${fmtMm(group.v)} ${signed(rule.vanoH)}.`)}">Vano<strong>${fmtMm(vanoW)} x ${fmtMm(vanoH)} mm</strong></span>
-              <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipW)}">Perfil horizontal para fabricar<strong>${cutQty} pzas x ${escapeHtml(cutMark)} ${fmtMm(cutW)} mm</strong></span>
-              <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipH)}">Perfil vertical para fabricar<strong>${cutQty} pzas x ${escapeHtml(cutMark)} ${fmtMm(cutH)} mm</strong></span>
+              <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipW)}">Perfil horizontal para fabricar <em class="cut-mark">${escapeHtml(cutMark)}</em><strong>${cutQty} pzas x ${fmtMm(cutW)} mm</strong></span>
+              <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipH)}">Perfil vertical para fabricar <em class="cut-mark">${escapeHtml(cutMark)}</em><strong>${cutQty} pzas x ${fmtMm(cutH)} mm</strong></span>
               <span class="has-tip" data-tip="${escapeHtmlAttr(`Medida final del mosquitero: ancho = vano ancho ${fmtMm(vanoW)} ${signed(rule.mosqWAdd)}.`)}">Medida final ancho<strong>${fmtMm(mosqW)} mm</strong></span>
               <span class="has-tip" data-tip="${escapeHtmlAttr(`Medida final del mosquitero: alto = vano alto ${fmtMm(vanoH)} ${signed(rule.mosqHAdd)}.`)}">Medida final alto<strong>${fmtMm(mosqH)} mm</strong></span>
               ${extra ? `<span class="wide has-tip" data-tip="${escapeHtmlAttr(extra.tip)}">${escapeHtml(extra.label)}<strong>${escapeHtml(extra.value)}</strong></span>` : ''}
@@ -1612,7 +1630,7 @@
         });
         const cutText = Array.from(grouped.values())
           .sort((a, b) => b.length - a.length || a.use.localeCompare(b.use))
-          .map((item) => `${item.qty} x ${cutEndMarkForMeshType()} ${fmtMm(item.length)} ${item.use}`)
+          .map((item) => `${item.qty} x ${fmtMm(item.length)} ${item.use}`)
           .join(' | ');
         const groupedCuts = Array.from(grouped.values())
           .sort((a, b) => b.length - a.length || a.use.localeCompare(b.use));
@@ -1935,7 +1953,7 @@
               fillRect(x, barY, w, barH, fill);
               rect(x, barY, w, barH);
             }
-            if (w > 34) text(`${cutEndMarkForMeshType()} ${fmtMm(cut.length)} ${cut.use}`, x + 3, barY + 9, 6, true);
+            if (w > 34) text(`${fmtMm(cut.length)} ${cut.use}`, x + 3, barY + 9, 6, true);
             x += w;
           }
         });
