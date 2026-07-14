@@ -38,6 +38,10 @@
       font: inherit;
     }
 
+    select {
+      font: inherit;
+    }
+
     button {
       cursor: pointer;
       border: 0;
@@ -193,6 +197,64 @@
       margin: 0;
       font-size: 18px;
       color: var(--accent-dark);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .form-field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .form-field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .form-field input,
+    .form-field select {
+      min-height: 40px;
+      border: 1px solid #b7dcef;
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: var(--ink);
+      background: #fbfdff;
+    }
+
+    .esperto-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .esperto-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+      padding: 12px;
+    }
+
+    .esperto-box span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .esperto-box strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 20px;
     }
 
     .review-bar {
@@ -818,10 +880,13 @@
       .type-grid { grid-template-columns: 1fr; }
       .finish-grid { grid-template-columns: 1fr; }
       .module-grid { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .esperto-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
 
     @media (max-width: 620px) {
       .cards { grid-template-columns: 1fr; }
+      .esperto-summary { grid-template-columns: 1fr; }
       .catalog-header { align-items: flex-start; flex-direction: column; }
       .catalog-system { min-width: 240px; flex-basis: 240px; }
       .brand { align-items: flex-start; gap: 12px; }
@@ -859,11 +924,11 @@
         </button>
         <button class="module-card" type="button" data-open-module="esperto">
           <strong>HTFM Mosquiteros Esperto</strong>
-          <span>Nuevo modelo. Queda preparado para conectar el Excel y las reglas de Esperto.</span>
-          <span class="tag gold">En preparaciÃ³n</span>
+          <span>Nuevo modelo basado en el Excel HTFM Esperto. Captura los datos verdes y genera una hoja estilo Brezza.</span>
+          <span class="tag blue">Abrir mÃ³dulo</span>
         </button>
       </div>
-      <div class="status" id="homeStatus">Por ahora Esperto queda como entrada preparada; el cÃ¡lculo se activarÃ¡ cuando carguemos sus reglas.</div>
+      <div class="status" id="homeStatus">Selecciona un mÃ³dulo para comenzar.</div>
     </section>
 
     <div id="fixedModule" hidden>
@@ -994,6 +1059,57 @@
         </button>
       </div>
     </section>
+    </div>
+
+    <div id="espertoModule" hidden>
+      <div class="module-topbar">
+        <h2 class="module-title">HTFM Mosquiteros Esperto</h2>
+        <button class="btn secondary" id="backHomeEspertoBtn" type="button">Cambiar mÃ³dulo</button>
+      </div>
+
+      <section class="panel">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="espertoCustomer">Cliente</label>
+            <input id="espertoCustomer" type="text" value="PCW PANORAMAH - P-15C6B">
+          </div>
+          <div class="form-field">
+            <label for="espertoDate">Fecha</label>
+            <input id="espertoDate" type="date">
+          </div>
+          <div class="form-field">
+            <label for="espertoQty">Cantidad</label>
+            <input id="espertoQty" type="number" min="1" step="1" value="1">
+          </div>
+          <div class="form-field">
+            <label for="espertoWidth">Ancho total W mm</label>
+            <input id="espertoWidth" type="number" min="1" step="0.1" value="1615">
+          </div>
+          <div class="form-field">
+            <label for="espertoHeight">Alto H mm</label>
+            <input id="espertoHeight" type="number" min="1" step="0.1" value="2370">
+          </div>
+          <div class="form-field">
+            <label for="espertoColor">Color</label>
+            <input id="espertoColor" type="text" value="Marfil">
+          </div>
+          <div class="form-field">
+            <label for="espertoMode">Tipo Esperto</label>
+            <select id="espertoMode">
+              <option value="auto">AutomÃ¡tico por alerta</option>
+              <option value="simple">PlissÃ¨ 8LF Simple version</option>
+              <option value="standard">PlissÃ¨ singola - Estandar</option>
+              <option value="xl">PlissÃ¨ singola XL-M01</option>
+            </select>
+          </div>
+        </div>
+        <div class="esperto-summary" id="espertoSummary"></div>
+        <div class="download-row">
+          <button class="btn" id="espertoEvaluateBtn" type="button">Evaluar Esperto</button>
+          <button class="btn secondary" id="espertoPdfBtn" type="button">Descargar HTFM Esperto PDF</button>
+        </div>
+        <div class="status" id="espertoStatus">Captura los datos verdes del Excel Esperto y revisa el tipo sugerido.</div>
+      </section>
     </div>
   </main>
 
@@ -1128,22 +1244,216 @@
     function showHome() {
       $('homePanel').hidden = false;
       $('fixedModule').hidden = true;
+      $('espertoModule').hidden = true;
       history.replaceState(null, '', location.pathname);
     }
 
     function openFixedModule() {
       $('homePanel').hidden = true;
       $('fixedModule').hidden = false;
+      $('espertoModule').hidden = true;
       history.replaceState(null, '', '#fijos');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function showEspertoPending() {
-      $('homeStatus').textContent = 'Esperto ya tiene su entrada lista. Falta cargar sus perfiles, reglas y fÃ³rmulas del Excel para activar el cÃ¡lculo.';
-      $('homeStatus').style.color = 'var(--warn)';
-      document.querySelectorAll('[data-open-module]').forEach((button) => {
-        button.classList.toggle('active-choice', button.dataset.openModule === 'esperto');
+    function openEspertoModule() {
+      $('homePanel').hidden = true;
+      $('fixedModule').hidden = true;
+      $('espertoModule').hidden = false;
+      history.replaceState(null, '', '#esperto');
+      renderEsperto();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function espertoInputNumber(id, fallback = 0) {
+      const value = Number($(id).value);
+      return Number.isFinite(value) ? value : fallback;
+    }
+
+    function espertoWireCount(height) {
+      if (height < 551) return 0;
+      if (height < 1011) return 1;
+      if (height < 1451) return 2;
+      if (height < 1801) return 3;
+      if (height < 2600) return 4;
+      if (height < 3210) return 5;
+      return 'Fuori MISURA';
+    }
+
+    function espertoData() {
+      const qty = Math.max(1, Math.round(espertoInputNumber('espertoQty', 1)));
+      const width = espertoInputNumber('espertoWidth', 0);
+      const height = espertoInputNumber('espertoHeight', 0);
+      const panelWidth = width / qty;
+      const clearance = height - (panelWidth * 2);
+      const requestedMode = $('espertoMode').value;
+      let mode = requestedMode;
+      if (mode === 'auto') {
+        if (panelWidth > 1500) mode = 'xl';
+        else if (clearance > 200) mode = 'simple';
+        else mode = 'standard';
+      }
+      const modeLabels = {
+        simple: 'PlissÃ¨ 8LF Simple version',
+        standard: 'PlissÃ¨ singola - Estandar',
+        xl: 'PlissÃ¨ singola XL-M01'
+      };
+      const warning = clearance < 200
+        ? 'AtenciÃ³n: revisar medida, la alerta del Excel indica que no se puede fabricar con esta relaciÃ³n.'
+        : mode === 'xl'
+          ? 'Usar XL-M01 porque el ancho por pieza es mayor a 1500 mm.'
+          : mode === 'simple'
+            ? 'Usar versiÃ³n simple por la alerta de perfiles y tela.'
+            : 'Medida dentro de rango estÃ¡ndar.';
+      const wires = espertoWireCount(height);
+      const totalWires = Number.isFinite(wires) ? wires + 2 : wires;
+      const guideTop = panelWidth - 1;
+      const guideBottom = panelWidth - 8;
+      const profilePull = height - 116.6;
+      const pvcMagnet = height - 128;
+      const fabricHeight = height - 49;
+      const folds = Math.ceil((panelWidth - 45) * 0.036);
+      return {
+        customer: $('espertoCustomer').value.trim() || '-',
+        date: $('espertoDate').value || new Date().toISOString().slice(0, 10),
+        qty,
+        width,
+        height,
+        color: $('espertoColor').value.trim() || '-',
+        mode,
+        modeLabel: modeLabels[mode] || mode,
+        panelWidth,
+        clearance,
+        warning,
+        wires,
+        totalWires,
+        guideTop,
+        guideBottom,
+        profilePull,
+        pvcMagnet,
+        fabricHeight,
+        folds
+      };
+    }
+
+    function renderEsperto() {
+      const data = espertoData();
+      $('espertoSummary').innerHTML = [
+        ['Tipo sugerido', data.modeLabel],
+        ['Ancho por pieza', `${fmtMm(data.panelWidth)} mm`],
+        ['Alto', `${fmtMm(data.height)} mm`],
+        ['Total hilos', String(data.totalWires)]
+      ].map(([label, value]) => `<div class="esperto-box"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('');
+      $('espertoStatus').textContent = data.warning;
+      $('espertoStatus').style.color = data.clearance < 200 ? 'var(--danger)' : 'var(--muted)';
+      return data;
+    }
+
+    async function downloadEspertoPdf() {
+      const data = renderEsperto();
+      const pdf = buildEspertoPdf(data, await loadPdfLogoBytes());
+      const blob = new Blob([pdf], { type: 'application/pdf' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'htfm-esperto.pdf';
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    function buildEspertoPdf(data, logoBytes) {
+      const pageW = 595;
+      const pageH = 842;
+      const margin = 28;
+      const objects = [];
+      const addObject = (body) => {
+        objects.push(body);
+        return objects.length;
+      };
+      const fontObj = addObject('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+      const boldFontObj = addObject('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
+      const logoObj = logoBytes ? addObject([
+        `<< /Type /XObject /Subtype /Image /Width 501 /Height 500 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${logoBytes.length} >>\nstream\n`,
+        logoBytes,
+        '\nendstream',
+      ]) : null;
+      const commands = [];
+      const rect = (x, y, w, h) => commands.push(`${x} ${y} ${w} ${h} re S`);
+      const fillRect = (x, y, w, h, color = '0.90 0.95 0.99') => commands.push(`${color} rg ${x} ${y} ${w} ${h} re f 0 0 0 RG`);
+      const text = (value, x, y, size = 9, bold = false, color = '0 0 0') => {
+        commands.push(`${color} rg`);
+        commands.push(`BT /${bold ? 'F2' : 'F1'} ${size} Tf ${x} ${y} Td (${pdfEscape(pdfText(value))}) Tj ET`);
+      };
+      const headerY = pageH - margin - 22;
+      fillRect(margin, pageH - 146, pageW - margin * 2, 120, '0.04 0.32 0.52');
+      text('HTFM MOSQUITEROS ESPERTO', margin + 12, headerY, 15, true, '1 1 1');
+      text(`Cliente: ${shortPdfText(data.customer, 50)}`, margin + 12, headerY - 17, 9, true, '1 1 1');
+      text(`Fecha: ${data.date}    Color: ${shortPdfText(data.color, 34)}`, margin + 12, headerY - 33, 8, false, '1 1 1');
+      text(`Tipo: ${data.modeLabel}`, margin + 12, headerY - 49, 10, true, '1 1 1');
+      text(`Cantidad: ${data.qty} pz`, margin + 365, headerY - 44, 8, true, '1 1 1');
+      text(`Ancho total: ${fmtMm(data.width)} mm`, margin + 365, headerY - 58, 8, false, '1 1 1');
+      text(`Alto: ${fmtMm(data.height)} mm`, margin + 365, headerY - 72, 8, false, '1 1 1');
+      if (logoObj) commands.push(`q 48 0 0 48 ${pageW - margin - 62} ${pageH - 96} cm /Logo Do Q`);
+      commands.push('0 0 0 rg');
+
+      let y = pageH - 170;
+      rect(margin, y - 72, pageW - margin * 2, 72);
+      text('Resultado de selecciÃ³n', margin + 10, y - 16, 12, true);
+      text(`Tipo de mosquitero: ${data.modeLabel}`, margin + 10, y - 34, 9, true);
+      text(`Alerta / criterio: ${data.warning}`, margin + 10, y - 52, 8, false, data.clearance < 200 ? '0.65 0.05 0.05' : '0 0 0');
+
+      y -= 94;
+      rect(margin, y - 160, pageW - margin * 2, 160);
+      text('Datos de fabricaciÃ³n', margin + 10, y - 16, 12, true);
+      text(`Ancho por pieza: ${fmtMm(data.panelWidth)} mm`, margin + 10, y - 38, 9, true);
+      text(`Alto: ${fmtMm(data.height)} mm`, margin + 285, y - 38, 9, true);
+      text(`Hilos: ${data.wires} + 2 = ${data.totalWires}`, margin + 10, y - 58, 9);
+      text(`Pliegues: ${data.folds}`, margin + 285, y - 58, 9);
+      text('SecciÃ³n de perfiles y tela', margin + 10, y - 88, 10, true);
+      text(`Perfil pared / tirador: ${fmtMm(data.profilePull)} mm`, margin + 10, y - 108, 8);
+      text(`GuÃ­a superior: ${fmtMm(data.guideTop)} mm`, margin + 10, y - 124, 8);
+      text(`GuÃ­a inferior: ${fmtMm(data.guideBottom)} mm`, margin + 285, y - 124, 8);
+      text(`PVC porta imÃ¡n: ${fmtMm(data.pvcMagnet)} mm`, margin + 10, y - 140, 8);
+      text(`Altura de tela: ${fmtMm(data.fabricHeight)} mm`, margin + 285, y - 140, 8);
+
+      y -= 182;
+      rect(margin, y - 126, pageW - margin * 2, 126);
+      text('Notas para producciÃ³n', margin + 10, y - 16, 12, true);
+      text('Documento generado desde datos verdes del Excel HTFM Esperto.', margin + 10, y - 38, 8);
+      text('Las primeras reglas se basan en las tres pestaÃ±as iniciales del archivo Esperto.', margin + 10, y - 54, 8);
+      text('Siguiente ajuste: conectar validaciones exactas y desglose completo de cÃ³digos/materiales.', margin + 10, y - 70, 8);
+
+      const content = commands.join('\n');
+      const contentObj = addObject(`<< /Length ${pdfByteLength(content)} >>\nstream\n${content}\nendstream`);
+      const xObject = logoObj ? `/XObject << /Logo ${logoObj} 0 R >>` : '';
+      const pageObj = addObject(`<< /Type /Page /Parent 0 0 R /MediaBox [0 0 ${pageW} ${pageH}] /Resources << /Font << /F1 ${fontObj} 0 R /F2 ${boldFontObj} 0 R >> ${xObject} >> /Contents ${contentObj} 0 R >>`);
+      const pagesObj = addObject(`<< /Type /Pages /Kids [${pageObj} 0 R] /Count 1 >>`);
+      objects[pageObj - 1] = objects[pageObj - 1].replace('/Parent 0 0 R', `/Parent ${pagesObj} 0 R`);
+      const catalogObj = addObject(`<< /Type /Catalog /Pages ${pagesObj} 0 R >>`);
+      const encoder = new TextEncoder();
+      const parts = [encoder.encode('%PDF-1.4\n')];
+      let pdfLength = parts[0].length;
+      const offsets = [0];
+      objects.forEach((body, index) => {
+        offsets.push(pdfLength);
+        const objectParts = Array.isArray(body) ? body : [body];
+        const packed = [
+          encoder.encode(`${index + 1} 0 obj\n`),
+          ...objectParts.map((part) => part instanceof Uint8Array ? part : encoder.encode(part)),
+          encoder.encode('\nendobj\n'),
+        ];
+        packed.forEach((part) => {
+          parts.push(part);
+          pdfLength += part.length;
+        });
       });
+      const xref = pdfLength;
+      let trailer = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+      offsets.slice(1).forEach((offset) => {
+        trailer += `${String(offset).padStart(10, '0')} 00000 n \n`;
+      });
+      trailer += `trailer\n<< /Size ${objects.length + 1} /Root ${catalogObj} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+      parts.push(encoder.encode(trailer));
+      return concatPdfBytes(parts);
     }
 
     async function requestJson(url, options) {
@@ -2593,15 +2903,29 @@
           document.querySelectorAll('[data-open-module]').forEach((item) => item.classList.toggle('active-choice', item === button));
           openFixedModule();
         } else {
-          showEspertoPending();
+          document.querySelectorAll('[data-open-module]').forEach((item) => item.classList.toggle('active-choice', item === button));
+          openEspertoModule();
         }
       });
     });
     $('backHomeBtn').addEventListener('click', showHome);
+    $('backHomeEspertoBtn').addEventListener('click', showHome);
+    $('espertoEvaluateBtn').addEventListener('click', renderEsperto);
+    $('espertoPdfBtn').addEventListener('click', () => downloadEspertoPdf().catch((error) => {
+      $('espertoStatus').textContent = error.message;
+      $('espertoStatus').style.color = 'var(--danger)';
+    }));
+    ['espertoCustomer', 'espertoDate', 'espertoQty', 'espertoWidth', 'espertoHeight', 'espertoColor', 'espertoMode'].forEach((id) => {
+      $(id).addEventListener('input', renderEsperto);
+      $(id).addEventListener('change', renderEsperto);
+    });
     setMeshType(selectedMeshType);
     setMeshColor(selectedMeshColor);
+    $('espertoDate').value = new Date().toISOString().slice(0, 10);
+    renderEsperto();
     loadProfiles();
     if (location.hash === '#fijos') openFixedModule();
+    if (location.hash === '#esperto') openEspertoModule();
   </script>
 </body>
 </html>
