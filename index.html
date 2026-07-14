@@ -524,13 +524,13 @@
       margin-top: 2px;
     }
 
-    .cut-mark {
+    .cut-position {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 34px;
+      min-width: 52px;
       margin: 3px 0 5px;
-      padding: 2px 7px;
+      padding: 2px 8px;
       border-radius: 999px;
       border: 1px solid #a9d1ea;
       background: #eef8ff;
@@ -538,7 +538,7 @@
       font-family: Consolas, "Courier New", monospace;
       font-size: 13px;
       font-weight: 800;
-      letter-spacing: 2px;
+      letter-spacing: 1px;
       white-space: nowrap;
     }
 
@@ -1154,12 +1154,13 @@
         const cutH = mosqH + rule.cutAdd;
         const count = group.count || 1;
         const cutQty = count * 2;
-        const cutMark = cutEndMarkForMeshType();
+        const cutPosH = cutPositionLabel('H');
+        const cutPosV = cutPositionLabel('V');
         const pieceLabel = group.pieceTotal > 1 ? `Cuadro ${group.pieceIndex} de ${group.pieceTotal}` : 'Cuadro 1';
         const discardToken = cardToken(group);
         const extra = calcExtra(rule, mosqW, mosqH, count);
         const extraCopy = extra ? ` | ${extra.label}: ${extra.value}` : '';
-        const copyText = `${group.profile} | ${meshTypeLabels[selectedMeshType]} | ${pieceLabel} | Vano: ${fmtMm(vanoW)} x ${fmtMm(vanoH)} mm | Perfil mosquitero: ${cutQty} pzas x ${cutMark} ${fmtMm(cutW)} mm horizontal, ${cutQty} pzas x ${cutMark} ${fmtMm(cutH)} mm vertical | Medida final mosquitero: ${fmtMm(mosqW)} x ${fmtMm(mosqH)} mm${extraCopy}`;
+        const copyText = `${group.profile} | ${meshTypeLabels[selectedMeshType]} | ${pieceLabel} | Vano: ${fmtMm(vanoW)} x ${fmtMm(vanoH)} mm | Perfil mosquitero: ${cutQty} pzas x ${fmtMm(cutW)} mm horizontal Pos ${cutPosH}, ${cutQty} pzas x ${fmtMm(cutH)} mm vertical Pos ${cutPosV} | Medida final mosquitero: ${fmtMm(mosqW)} x ${fmtMm(mosqH)} mm${extraCopy}`;
         const cutTipW = rule.cutAdd === 0
           ? `Perfil para mosquitero: en corte a 45 el perfil ancho queda igual a la medida final ancho ${fmtMm(mosqW)}. Son ${cutQty} piezas.`
           : `Perfil para mosquitero: ancho = medida final ancho ${fmtMm(mosqW)} ${signed(rule.cutAdd)}. Son ${cutQty} piezas.`;
@@ -1178,8 +1179,8 @@
             <div class="calc-values">
               <span class="wide has-tip" data-tip="${escapeHtmlAttr(`Medidas tomadas de la HTF en 01TRONZADORAS DE PERFIL: hoja horizontal ${fmtMm(group.h)} mm y hoja vertical ${fmtMm(group.v)} mm.`)}">Medida hoja HTF<strong>H ${fmtMm(group.h)} mm / V ${fmtMm(group.v)} mm</strong></span>
               <span class="wide has-tip" data-tip="${escapeHtmlAttr(`Vano = hoja H ${fmtMm(group.h)} ${signed(rule.vanoW)} y hoja V ${fmtMm(group.v)} ${signed(rule.vanoH)}.`)}">Vano<strong>${fmtMm(vanoW)} x ${fmtMm(vanoH)} mm</strong></span>
-              <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipW)}">Perfil horizontal para fabricar <em class="cut-mark">${escapeHtml(cutMark)}</em><strong>${cutQty} pzas x ${fmtMm(cutW)} mm</strong></span>
-              <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipH)}">Perfil vertical para fabricar <em class="cut-mark">${escapeHtml(cutMark)}</em><strong>${cutQty} pzas x ${fmtMm(cutH)} mm</strong></span>
+              <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipW)}">Perfil horizontal para fabricar <em class="cut-position">Pos ${escapeHtml(cutPosH)}</em><strong>${cutQty} pzas x ${fmtMm(cutW)} mm</strong></span>
+              <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipH)}">Perfil vertical para fabricar <em class="cut-position">Pos ${escapeHtml(cutPosV)}</em><strong>${cutQty} pzas x ${fmtMm(cutH)} mm</strong></span>
               <span class="has-tip" data-tip="${escapeHtmlAttr(`Medida final del mosquitero: ancho = vano ancho ${fmtMm(vanoW)} ${signed(rule.mosqWAdd)}.`)}">Medida final ancho<strong>${fmtMm(mosqW)} mm</strong></span>
               <span class="has-tip" data-tip="${escapeHtmlAttr(`Medida final del mosquitero: alto = vano alto ${fmtMm(vanoH)} ${signed(rule.mosqHAdd)}.`)}">Medida final alto<strong>${fmtMm(mosqH)} mm</strong></span>
               ${extra ? `<span class="wide has-tip" data-tip="${escapeHtmlAttr(extra.tip)}">${escapeHtml(extra.label)}<strong>${escapeHtml(extra.value)}</strong></span>` : ''}
@@ -1384,7 +1385,8 @@
           const cutH = mosqH + rule.cutAdd;
           const count = group.count || 1;
           const cutQty = count * 2;
-          const cutMark = cutEndMarkForMeshType();
+          const cutPosH = cutPositionLabel('H');
+          const cutPosV = cutPositionLabel('V');
           const extra = calcExtra(rule, mosqW, mosqH, count);
           const pieceLabel = group.pieceTotal > 1 ? `Cuadro ${group.pieceIndex} de ${group.pieceTotal}` : 'Cuadro 1';
           rows.push({
@@ -1407,7 +1409,8 @@
             cutW,
             cutH,
             cutQty,
-            cutMark,
+            cutPosH,
+            cutPosV,
             extraLabel: extra ? extra.label : '',
             extraValue: extra ? extra.value : ''
           });
@@ -1438,7 +1441,7 @@
         setStatus('No hay medidas calculadas para descargar.', true);
         return;
       }
-      const headers = ['Nomenclatura', 'Perfil hoja', 'Sistema', 'Tipo de cierre', 'Cuadros detectados', 'Hoja H', 'Hoja V', 'Vano ancho', 'Vano alto', 'Perfil horizontal para fabricar', 'Pzas horizontal', 'Perfil vertical para fabricar', 'Pzas vertical', 'Medida final ancho', 'Medida final alto', 'Extra', 'Extra valor'];
+      const headers = ['Nomenclatura', 'Perfil hoja', 'Sistema', 'Tipo de cierre', 'Cuadros detectados', 'Hoja H', 'Hoja V', 'Vano ancho', 'Vano alto', 'Perfil horizontal para fabricar', 'Pzas horizontal', 'Pos horizontal', 'Perfil vertical para fabricar', 'Pzas vertical', 'Pos vertical', 'Medida final ancho', 'Medida final alto', 'Extra', 'Extra valor'];
       const fullHeaders = ['Tipo de mosquitero', 'Color', ...headers];
       const htmlRows = [
         `<tr>${fullHeaders.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr>`,
@@ -1454,10 +1457,12 @@
           <td>${fmtMm(row.leafV)}</td>
           <td>${fmtMm(row.vanoW)}</td>
           <td>${fmtMm(row.vanoH)}</td>
-          <td>${escapeHtml(row.cutMark)} ${fmtMm(row.cutW)}</td>
+          <td>${fmtMm(row.cutW)}</td>
           <td>${row.cutQty}</td>
-          <td>${escapeHtml(row.cutMark)} ${fmtMm(row.cutH)}</td>
+          <td>${escapeHtml(row.cutPosH)}</td>
+          <td>${fmtMm(row.cutH)}</td>
           <td>${row.cutQty}</td>
+          <td>${escapeHtml(row.cutPosV)}</td>
           <td>${fmtMm(row.mosqW)}</td>
           <td>${fmtMm(row.mosqH)}</td>
           <td>${escapeHtml(row.extraLabel)}</td>
@@ -1549,7 +1554,7 @@
             meshType: meshTypeLabels[selectedMeshType] || selectedMeshType,
             color: selectedColorLabel(),
             angle: angleLabelForMeshType(),
-            cutMark: cutEndMarkForMeshType(),
+            cutPos: cutPositionLabel(cut.code),
             orientation: cut.orientation,
             code: cut.code,
             length: cut.length,
@@ -1663,7 +1668,11 @@
     }
 
     function cutEndMarkForMeshType() {
-      return selectedMeshType === 'brefix-45' ? '/ \\' : 'I I';
+      return selectedMeshType === 'brefix-45' ? '/-\\' : '|-|';
+    }
+
+    function cutPositionLabel(code) {
+      return `${code} ${cutEndMarkForMeshType()}`;
     }
 
     function buildWorkOrderPdf(rows, logoBytes) {
@@ -1885,8 +1894,8 @@
         text(`Hoja HTF: H ${fmtMm(row.leafH)} mm / V ${fmtMm(row.leafV)} mm`, margin + 8, y - 42, 8);
         text(`Vano: ${fmtMm(row.vanoW)} x ${fmtMm(row.vanoH)} mm`, margin + 220, y - 42, 8);
         text(`Medida final: ${fmtMm(row.mosqW)} x ${fmtMm(row.mosqH)} mm`, margin + 400, y - 42, 8);
-        text(`Perfil horizontal: ${row.cutQty} pzas x ${row.cutMark} ${fmtMm(row.cutW)} mm`, margin + 8, y - 58, 8, true);
-        text(`Perfil vertical: ${row.cutQty} pzas x ${row.cutMark} ${fmtMm(row.cutH)} mm`, margin + 260, y - 58, 8, true);
+        text(`Perfil horizontal: ${row.cutQty} pzas x ${fmtMm(row.cutW)} mm  Pos ${row.cutPosH}`, margin + 8, y - 58, 8, true);
+        text(`Perfil vertical: ${row.cutQty} pzas x ${fmtMm(row.cutH)} mm  Pos ${row.cutPosV}`, margin + 260, y - 58, 8, true);
         if (row.extraLabel) text(`${row.extraLabel}: ${row.extraValue}`, margin + 500, y - 58, 8);
         y -= h + 8;
       });
@@ -2008,10 +2017,10 @@
         { title: 'Perfil', x: margin + 32, w: 88 },
         { title: 'Color', x: margin + 122, w: 145 },
         { title: 'Angulo', x: margin + 270, w: 58 },
-        { title: 'Uso', x: margin + 330, w: 70 },
-        { title: 'Cantidad', x: margin + 402, w: 54 },
-        { title: 'Longitud', x: margin + 458, w: 70 },
-        { title: 'Referencia', x: margin + 530, w: pageW - margin * 2 - 530 + margin },
+        { title: 'Cantidad', x: margin + 330, w: 54 },
+        { title: 'Medidas', x: margin + 386, w: 70 },
+        { title: 'Pos', x: margin + 458, w: 58 },
+        { title: 'Referencia', x: margin + 518, w: pageW - margin * 2 - 518 + margin },
       ];
       const tableX = margin;
       const tableW = pageW - margin * 2;
@@ -2028,9 +2037,9 @@
         text(shortPdfText(row.profileName, 18), columns[1].x, y - 8, 7, true);
         text(shortPdfText(row.color || '', 27), columns[2].x, y - 8, 7);
         text(row.angle, columns[3].x, y - 8, 7);
-        text(`${row.orientation} (${row.code})`, columns[4].x, y - 8, 7);
-        text(`${row.qty} pzas`, columns[5].x, y - 8, 7, true);
-        text(`${row.cutMark} ${fmtMm(row.length)} mm`, columns[6].x, y - 8, 7, true);
+        text(`${row.qty} pzas`, columns[4].x, y - 8, 7, true);
+        text(`${fmtMm(row.length)} mm`, columns[5].x, y - 8, 7, true);
+        text(row.cutPos, columns[6].x, y - 8, 7, true);
         const refs = row.extraRefs ? `${row.referenceText}; +${row.extraRefs} mas` : row.referenceText;
         text(shortPdfText(refs || '-', 50), columns[7].x, y - 8, 6);
         y -= rowH;
