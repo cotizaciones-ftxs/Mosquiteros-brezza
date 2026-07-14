@@ -756,9 +756,9 @@
     <div class="review-bar">
       <section class="panel">
         <div class="upload">
-          <div class="filebox" id="fileDropzone" role="button" tabindex="0" aria-label="Seleccionar o arrastrar PDF">
+          <div class="filebox" id="fileDropzone" role="button" tabindex="0" aria-label="Seleccionar o arrastrar PDFs">
             <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path></svg>
-            <input id="pdfInput" type="file" accept="application/pdf,.pdf">
+            <input id="pdfInput" type="file" accept="application/pdf,.pdf" multiple>
           </div>
           <button class="btn" id="analyzeBtn" type="button">
             <svg class="icon" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
@@ -1043,14 +1043,14 @@
     }
 
     async function analyzeUpload() {
-      const file = $('pdfInput').files[0];
-      if (!file) {
-        setStatus('Selecciona un PDF primero.', true);
+      const files = selectedPdfFiles();
+      if (!files.length) {
+        setStatus('Selecciona uno o mas PDFs primero.', true);
         return;
       }
       const form = new FormData();
-      form.append('pdf', file);
-      setStatus('Analizando PDF...');
+      files.forEach((file) => form.append('pdf', file, file.name));
+      setStatus(files.length === 1 ? 'Analizando PDF...' : `Analizando ${files.length} PDFs...`);
       const { response, data } = await requestJson(`${apiBase}/api/extract`, { method: 'POST', body: form });
       if (!response.ok || data.error) {
         setStatus(data.error || 'No se pudo analizar el PDF.', true);
@@ -1084,7 +1084,9 @@
       if (!data.mosquitoWindows || data.mosquitoWindows.length === 0) {
         $('rowsBody').innerHTML = '<tr><td colspan="8">No encontré ventanas con texto MOSQUITERO. Revisa el texto crudo o mándame este PDF para ajustar el detector.</td></tr>';
       }
-      setStatus(`Listo. Se muestran ${data.mosquitoCount || 0} ventana(s) con nota de mosquitero.`);
+      const errors = data.errors || [];
+      const errorText = errors.length ? ` ${errors.length} PDF(s) no se pudieron leer.` : '';
+      setStatus(`Listo. Se muestran ${data.mosquitoCount || 0} ventana(s) con nota de mosquitero.${errorText}`);
     }
 
     function rowHtml(item) {
@@ -1109,6 +1111,7 @@
           <td>
             <span class="tag blue">${escapeHtml(item.nomenclature || 'Sin nomenclatura')}</span>
             <div class="status">Páginas: ${(item.pages || []).join(', ')}</div>
+            ${sourceFileHtml(item)}
             ${reviewTag}
           </td>
           <td>
@@ -1461,6 +1464,7 @@
           rows.push({
             windowIndex: item.index,
             nomenclature: item.nomenclature || '',
+            sourceFile: item.sourceFile || '',
             pages: (item.pages || []).join(', '),
             meshType: meshTypeLabels[selectedMeshType] || selectedMeshType,
             color: selectedColorLabel(),
@@ -1511,7 +1515,7 @@
         setStatus('No hay medidas calculadas para descargar.', true);
         return;
       }
-      const headers = ['Nomenclatura', 'Perfil hoja', 'Sistema', 'Tipo de cierre', 'Origen', 'Cuadros detectados', 'Hoja/Marco H', 'Hoja/Marco V', 'Vano ancho', 'Vano alto', 'Perfil horizontal para fabricar', 'Pzas horizontal', 'Pos horizontal', 'Perfil vertical para fabricar', 'Pzas vertical', 'Pos vertical', 'Medida final ancho', 'Medida final alto', 'Extra', 'Extra valor'];
+      const headers = ['Nomenclatura', 'Archivo origen', 'Perfil hoja', 'Sistema', 'Tipo de cierre', 'Origen', 'Cuadros detectados', 'Hoja/Marco H', 'Hoja/Marco V', 'Vano ancho', 'Vano alto', 'Perfil horizontal para fabricar', 'Pzas horizontal', 'Pos horizontal', 'Perfil vertical para fabricar', 'Pzas vertical', 'Pos vertical', 'Medida final ancho', 'Medida final alto', 'Extra', 'Extra valor'];
       const fullHeaders = ['Tipo de mosquitero', 'Color', ...headers];
       const htmlRows = [
         `<tr>${fullHeaders.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr>`,
@@ -1519,6 +1523,7 @@
           <td>${escapeHtml(row.meshType)}</td>
           <td>${escapeHtml(row.color)}</td>
           <td>${escapeHtml(row.nomenclature)}</td>
+          <td>${escapeHtml(row.sourceFile)}</td>
           <td>${escapeHtml(row.profile)}</td>
           <td>${escapeHtml(row.system)}</td>
           <td>${escapeHtml(row.closureType)}</td>
@@ -1633,7 +1638,7 @@
             references: new Set(),
           };
           current.qty += cut.qty;
-          current.references.add([row.nomenclature || 'Sin nomenclatura', row.pieceLabel].filter(Boolean).join(' - '));
+          current.references.add([row.sourceFile, row.nomenclature || 'Sin nomenclatura', row.pieceLabel].filter(Boolean).join(' - '));
           grouped.set(key, current);
         });
       });
@@ -1663,7 +1668,7 @@
               system: row.system,
               use: cut.use,
               length: cut.length,
-              reference: [row.nomenclature || 'Sin nomenclatura', row.pieceLabel].filter(Boolean).join(' - '),
+              reference: [row.sourceFile, row.nomenclature || 'Sin nomenclatura', row.pieceLabel].filter(Boolean).join(' - '),
             });
           }
         });
@@ -1960,7 +1965,8 @@
         const h = 72;
         rect(margin, y - h + 8, pageW - margin * 2, h);
         text(`Mosquitero ${row.workOrderNumber} de ${row.workOrderTotal} | ${row.nomenclature || 'Sin nomenclatura'} | ${row.pieceLabel}${row.sourceNote ? ` | ${row.sourceNote}` : ''}`, margin + 8, y - 8, 11, true);
-        text(`${row.profile} | ${row.system} | ${row.closureType} | ${row.meshType} | Color: ${row.color}`, margin + 8, y - 24, 8);
+        const sourceLabel = row.sourceFile ? ` | Archivo: ${shortPdfText(row.sourceFile, 34)}` : '';
+        text(`${row.profile} | ${row.system} | ${row.closureType} | ${row.meshType} | Color: ${row.color}${sourceLabel}`, margin + 8, y - 24, 8);
 
         text(`${row.sourceNote ? 'Marco HTF' : 'Hoja HTF'}: H ${fmtMm(row.leafH)} mm / V ${fmtMm(row.leafV)} mm`, margin + 8, y - 42, 8);
         text(`Vano: ${fmtMm(row.vanoW)} x ${fmtMm(row.vanoH)} mm`, margin + 220, y - 42, 8);
@@ -2230,6 +2236,17 @@
       }[char]));
     }
 
+    function selectedPdfFiles() {
+      return Array.from($('pdfInput').files || [])
+        .filter((file) => file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'));
+    }
+
+    function sourceFileHtml(item) {
+      const files = lastData?.fileNames || [];
+      if (!item.sourceFile || files.length < 2) return '';
+      return `<div class="status">Archivo: ${escapeHtml(item.sourceFile)}</div>`;
+    }
+
     const pdfInput = $('pdfInput');
     const fileDropzone = $('fileDropzone');
     fileDropzone.addEventListener('click', (event) => {
@@ -2242,8 +2259,12 @@
       }
     });
     pdfInput.addEventListener('change', () => {
-      const file = pdfInput.files[0];
-      if (file) setStatus(`PDF listo para analizar: ${file.name}`);
+      const files = selectedPdfFiles();
+      if (files.length === 1) {
+        setStatus(`PDF listo para analizar: ${files[0].name}`);
+      } else if (files.length > 1) {
+        setStatus(`${files.length} PDFs listos para analizar.`);
+      }
     });
     ['dragenter', 'dragover'].forEach((eventName) => {
       fileDropzone.addEventListener(eventName, (event) => {
@@ -2258,13 +2279,14 @@
     });
     fileDropzone.addEventListener('drop', (event) => {
       event.preventDefault();
-      const file = Array.from(event.dataTransfer.files || []).find((item) => item.type === 'application/pdf' || item.name.toLowerCase().endsWith('.pdf'));
-      if (!file) {
-        setStatus('Suelta un archivo PDF.', true);
+      const files = Array.from(event.dataTransfer.files || [])
+        .filter((item) => item.type === 'application/pdf' || item.name.toLowerCase().endsWith('.pdf'));
+      if (!files.length) {
+        setStatus('Suelta uno o mas archivos PDF.', true);
         return;
       }
       const transfer = new DataTransfer();
-      transfer.items.add(file);
+      files.forEach((file) => transfer.items.add(file));
       pdfInput.files = transfer.files;
       pdfInput.dispatchEvent(new Event('change'));
     });

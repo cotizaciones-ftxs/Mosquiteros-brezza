@@ -427,7 +427,7 @@ def confidence(has_mosquito: bool, measure: dict, profiles: list[dict]) -> str:
     return "revisar"
 
 
-def parse_pdf_upload(headers, rfile) -> tuple[str, bytes] | None:
+def parse_pdf_uploads(headers, rfile) -> list[tuple[str, bytes]] | None:
     content_type = headers.get("Content-Type", "")
     boundary_match = re.search(r'boundary="?([^";]+)"?', content_type)
     if "multipart/form-data" not in content_type or not boundary_match:
@@ -441,6 +441,7 @@ def parse_pdf_upload(headers, rfile) -> tuple[str, bytes] | None:
     body = rfile.read(content_length)
     boundary = ("--" + boundary_match.group(1)).encode("utf-8")
 
+    uploads = []
     for part in body.split(boundary):
         part = part.strip(b"\r\n")
         if not part or part == b"--":
@@ -463,9 +464,55 @@ def parse_pdf_upload(headers, rfile) -> tuple[str, bytes] | None:
         filename = filename_match.group(1) if filename_match else "htf.pdf"
         if data.endswith(b"\r\n"):
             data = data[:-2]
-        return filename or "htf.pdf", data
+        if data:
+            uploads.append((filename or "htf.pdf", data))
 
-    return None
+    return uploads or None
+
+
+def merge_pdf_results(results: list[dict], errors: list[dict] | None = None) -> dict:
+    if not results:
+        return {
+            "fileName": "-",
+            "fileNames": [],
+            "windowCount": 0,
+            "mosquitoCount": 0,
+            "documentInfo": {"budget": "", "client": ""},
+            "windows": [],
+            "mosquitoWindows": [],
+            "errors": errors or [],
+        }
+
+    windows = []
+    mosquito_windows = []
+    file_names = []
+    document_info = {"budget": "", "client": ""}
+    for result in results:
+        file_name = result.get("fileName", "")
+        if file_name:
+            file_names.append(file_name)
+        if not document_info["budget"] and result.get("documentInfo", {}).get("budget"):
+            document_info["budget"] = result["documentInfo"]["budget"]
+        if not document_info["client"] and result.get("documentInfo", {}).get("client"):
+            document_info["client"] = result["documentInfo"]["client"]
+        for collection_name, target in (("windows", windows), ("mosquitoWindows", mosquito_windows)):
+            for item in result.get(collection_name, []):
+                clone = dict(item)
+                clone["sourceFile"] = file_name
+                clone["index"] = len(target) + 1
+                target.append(clone)
+
+    file_label = file_names[0] if len(file_names) == 1 else f"{len(file_names)} PDFs"
+    return {
+        "fileName": file_label,
+        "fileNames": file_names,
+        "windowCount": len(windows),
+        "mosquitoCount": len(mosquito_windows),
+        "documentInfo": document_info,
+        "windows": windows,
+        "mosquitoWindows": mosquito_windows,
+        "errors": errors or [],
+    }
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -513,25 +560,32 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json({"error": "Ruta no encontrada."}, status=404)
             return
 
-        upload = parse_pdf_upload(self.headers, self.rfile)
-        if upload is None:
-            self.send_json({"error": "Sube un PDF en el campo pdf."}, status=400)
+        uploads = parse_pdf_uploads(self.headers, self.rfile)
+        if uploads is None:
+            self.send_json({"error": "Sube uno o mas PDFs en el campo pdf."}, status=400)
             return
 
-        filename, file_data = upload
-        suffix = Path(filename or "htf.pdf").suffix or ".pdf"
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-            tmp.write(file_data)
-            tmp_path = Path(tmp.name)
-        try:
-            self.send_json(extract_pdf(tmp_path, filename or tmp_path.name))
-        except Exception as exc:
-            self.send_json({"error": str(exc)}, status=500)
-        finally:
+        results = []
+        errors = []
+        for filename, file_data in uploads:
+            suffix = Path(filename or "htf.pdf").suffix or ".pdf"
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                tmp.write(file_data)
+                tmp_path = Path(tmp.name)
             try:
-                tmp_path.unlink()
-            except OSError:
-                pass
+                results.append(extract_pdf(tmp_path, filename or tmp_path.name))
+            except Exception as exc:
+                errors.append({"fileName": filename or "htf.pdf", "error": str(exc)})
+            finally:
+                try:
+                    tmp_path.unlink()
+                except OSError:
+                    pass
+
+        if not results and errors:
+            self.send_json({"error": "No se pudo leer ningun PDF.", "errors": errors}, status=500)
+            return
+        self.send_json(merge_pdf_results(results, errors))
 
     def send_file(self, path: Path, content_type: str) -> None:
         data = path.read_bytes()
