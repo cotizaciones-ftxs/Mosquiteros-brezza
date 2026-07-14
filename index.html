@@ -1116,7 +1116,7 @@
             </div>
           </td>
           <td>${piecesCell}</td>
-          <td>${fabricationHtml(profiles, pieces, key)}</td>
+          <td>${fabricationHtml(item, pieces, key)}</td>
           <td><span class="tag ${item.confidence === 'alta' ? 'green' : item.confidence === 'media' ? 'gold' : 'red'}">${escapeHtml(item.confidence)}</span></td>
           <td class="debug-col"><div class="raw mono">${escapeHtml(item.rawPreview || '')}</div></td>
         </tr>
@@ -1132,13 +1132,14 @@
         </div>`;
     }
 
-    function fabricationHtml(profiles, targetCount = null, key = '') {
+    function fabricationHtml(itemOrProfiles, targetCount = null, key = '') {
       const rules = activeFormulaRules();
       if (!rules) {
         return '<span class="tag gray">Fórmula pendiente</span>';
       }
 
-      const groups = groupsForFabrication(profiles, targetCount, key);
+      const item = Array.isArray(itemOrProfiles) ? { leafProfiles: itemOrProfiles } : itemOrProfiles;
+      const groups = groupsForFabricationItem(item, targetCount, key);
       const cards = groups.map((group) => {
         const rule = rules[group.profile];
         if (!rule) {
@@ -1147,8 +1148,8 @@
         if (!Number.isFinite(group.h) || !Number.isFinite(group.v)) {
           return `<div class="calc-card"><div class="calc-title"><span>${escapeHtml(group.profile)}</span><span class="tag gold">Falta H/V</span></div></div>`;
         }
-        const vanoW = group.h + rule.vanoW;
-        const vanoH = group.v + rule.vanoH;
+        const vanoW = Number.isFinite(group.directVanoW) ? group.directVanoW : group.h + rule.vanoW;
+        const vanoH = Number.isFinite(group.directVanoH) ? group.directVanoH : group.v + rule.vanoH;
         const mosqW = vanoW + rule.mosqWAdd;
         const mosqH = vanoH + rule.mosqHAdd;
         const cutW = mosqW + rule.cutAdd;
@@ -1161,7 +1162,8 @@
         const discardToken = cardToken(group);
         const extra = calcExtra(rule, mosqW, mosqH, count);
         const extraCopy = extra ? ` | ${extra.label}: ${extra.value}` : '';
-        const copyText = `${group.profile} | ${meshTypeLabels[selectedMeshType]} | ${pieceLabel} | Vano: ${fmtMm(vanoW)} x ${fmtMm(vanoH)} mm | Perfil mosquitero: ${cutQty} pzas x ${fmtMm(cutW)} mm horizontal Pos ${cutPosH}, ${cutQty} pzas x ${fmtMm(cutH)} mm vertical Pos ${cutPosV} | Medida final mosquitero: ${fmtMm(mosqW)} x ${fmtMm(mosqH)} mm${extraCopy}`;
+        const sourceCopy = group.sourceNote ? ` | ${group.sourceNote}` : '';
+        const copyText = `${group.profile} | ${meshTypeLabels[selectedMeshType]} | ${pieceLabel}${sourceCopy} | Vano: ${fmtMm(vanoW)} x ${fmtMm(vanoH)} mm | Perfil mosquitero: ${cutQty} pzas x ${fmtMm(cutW)} mm horizontal Pos ${cutPosH}, ${cutQty} pzas x ${fmtMm(cutH)} mm vertical Pos ${cutPosV} | Medida final mosquitero: ${fmtMm(mosqW)} x ${fmtMm(mosqH)} mm${extraCopy}`;
         const cutTipW = rule.cutAdd === 0
           ? `Perfil para mosquitero: en corte a 45 el perfil ancho queda igual a la medida final ancho ${fmtMm(mosqW)}. Son ${cutQty} piezas.`
           : `Perfil para mosquitero: ancho = medida final ancho ${fmtMm(mosqW)} ${signed(rule.cutAdd)}. Son ${cutQty} piezas.`;
@@ -1174,12 +1176,13 @@
               <span>${escapeHtml(group.profile)}</span>
               <span class="tag green">${escapeHtml(rule.system)}</span>
               <span class="tag blue">${escapeHtml(pieceLabel)}</span>
+              ${group.sourceNote ? `<span class="tag red">${escapeHtml(group.sourceNote)}</span>` : ''}
               <button class="copy-btn danger" type="button" data-discard-key="${escapeHtmlAttr(key)}" data-discard-token="${escapeHtmlAttr(discardToken)}">Descartar</button>
               <button class="copy-btn" type="button" data-copy="${escapeHtmlAttr(copyText)}">Copiar</button>
             </div>
             <div class="calc-values">
-              <span class="wide has-tip" data-tip="${escapeHtmlAttr(`Medidas tomadas de la HTF en 01TRONZADORAS DE PERFIL: hoja horizontal ${fmtMm(group.h)} mm y hoja vertical ${fmtMm(group.v)} mm.`)}">Medida hoja HTF<strong>H ${fmtMm(group.h)} mm / V ${fmtMm(group.v)} mm</strong></span>
-              <span class="wide has-tip" data-tip="${escapeHtmlAttr(`Vano = hoja H ${fmtMm(group.h)} ${signed(rule.vanoW)} y hoja V ${fmtMm(group.v)} ${signed(rule.vanoH)}.`)}">Vano<strong>${fmtMm(vanoW)} x ${fmtMm(vanoH)} mm</strong></span>
+              <span class="wide has-tip" data-tip="${escapeHtmlAttr(group.sourceTip || `Medidas tomadas de la HTF en 01TRONZADORAS DE PERFIL: hoja horizontal ${fmtMm(group.h)} mm y hoja vertical ${fmtMm(group.v)} mm.`)}">${group.directVanoW ? 'Medida marco HTF' : 'Medida hoja HTF'}<strong>H ${fmtMm(group.h)} mm / V ${fmtMm(group.v)} mm</strong></span>
+              <span class="wide has-tip" data-tip="${escapeHtmlAttr(group.directVanoW ? 'Vano inversora = marco - 6 soldadura - 67 - 67.' : `Vano = hoja H ${fmtMm(group.h)} ${signed(rule.vanoW)} y hoja V ${fmtMm(group.v)} ${signed(rule.vanoH)}.`)}">Vano<strong>${fmtMm(vanoW)} x ${fmtMm(vanoH)} mm</strong></span>
               <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipW)}">Perfil horizontal para fabricar <span class="cut-position">Pos ${escapeHtml(cutPosH)}</span><strong>${cutQty} pzas x ${fmtMm(cutW)} mm</strong></span>
               <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipH)}">Perfil vertical para fabricar <span class="cut-position">Pos ${escapeHtml(cutPosV)}</span><strong>${cutQty} pzas x ${fmtMm(cutH)} mm</strong></span>
               <span class="has-tip" data-tip="${escapeHtmlAttr(`Medida final del mosquitero: ancho = vano ancho ${fmtMm(vanoW)} ${signed(rule.mosqWAdd)}.`)}">Medida final ancho<strong>${fmtMm(mosqW)} mm</strong></span>
@@ -1269,9 +1272,66 @@
       return profiles.some((profile) => slidingProfiles.has(profile.profile));
     }
 
+    function isPressureWindow(profiles) {
+      return profiles.some((profile) => !slidingProfiles.has(profile.profile));
+    }
+
     function isLargeSlidingWindow(profiles, maxPieces = null) {
       const total = Number.isFinite(maxPieces) ? maxPieces : windowPieceCount(profiles);
       return isSlidingWindow(profiles) && total > 3;
+    }
+
+    function groupsForFabricationItem(item, targetCount = null, key = '') {
+      const inversoraGroup = inversoraFrameGroup(item);
+      if (inversoraGroup) return [inversoraGroup];
+      return groupsForFabrication(item?.leafProfiles || [], targetCount, key);
+    }
+
+    function inversoraFrameGroup(item) {
+      const profiles = item?.leafProfiles || [];
+      if (!item?.hasInversora || !isPressureWindow(profiles)) return null;
+      const rules = activeFormulaRules();
+      if (!rules) return null;
+      const profile = profiles.find((entry) => rules[entry.profile] && !slidingProfiles.has(entry.profile))?.profile;
+      if (!profile) return null;
+      const frames = item.frameProfiles || [];
+      const hFrame = frameLengthByOrientation(frames, 'H');
+      const vFrame = frameLengthByOrientation(frames, 'V');
+      if (!Number.isFinite(hFrame) || !Number.isFinite(vFrame)) return null;
+      const frameSeries = frameSeriesFor(frames) || 67;
+      const weldDiscount = 6;
+      const directVanoW = hFrame - weldDiscount - (frameSeries * 2);
+      const directVanoH = vFrame - weldDiscount - (frameSeries * 2);
+      if (!Number.isFinite(directVanoW) || !Number.isFinite(directVanoH) || directVanoW <= 0 || directVanoH <= 0) return null;
+      return {
+        profile,
+        h: hFrame,
+        v: vFrame,
+        directVanoW,
+        directVanoH,
+        count: 1,
+        sourceCount: 1,
+        sourceIndex: 1,
+        pieceIndex: 1,
+        pieceTotal: 1,
+        sourceNote: 'Inversora: marco completo',
+        sourceTip: `Inversora detectada. Vano ancho = marco H ${fmtMm(hFrame)} - ${weldDiscount} soldadura - ${frameSeries} - ${frameSeries}. Vano alto = marco V ${fmtMm(vFrame)} - ${weldDiscount} soldadura - ${frameSeries} - ${frameSeries}.`
+      };
+    }
+
+    function frameLengthByOrientation(frames, orientation) {
+      const values = (frames || [])
+        .filter((frame) => frame.orientation === orientation)
+        .map((frame) => parseLocaleNumber(frame.length))
+        .filter(Number.isFinite);
+      return values.length ? Math.max(...values) : NaN;
+    }
+
+    function frameSeriesFor(frames) {
+      const series = (frames || [])
+        .map((frame) => parseLocaleNumber(frame.series))
+        .filter(Number.isFinite);
+      return series.length ? series[0] : NaN;
     }
 
     function groupsForFabrication(profiles, targetCount = null, key = '') {
@@ -1299,6 +1359,7 @@
     }
 
     function effectiveWindowPieceCount(item) {
+      if (inversoraFrameGroup(item)) return 1;
       const key = rowKey(item);
       const value = Number(pieceOverrides[key]);
       const max = maxWindowPieceCount(item);
@@ -1308,6 +1369,7 @@
     }
 
     function maxWindowPieceCount(item) {
+      if (inversoraFrameGroup(item)) return 1;
       const profiles = item.leafProfiles || [];
       const total = expandedProfileGroups(profiles).length;
       if (isSlidingWindow(profiles)) return total || windowPieceCount(profiles);
@@ -1375,11 +1437,11 @@
       if (!lastData || !rules) return [];
       const rows = [];
       (lastData.mosquitoWindows || []).forEach((item) => {
-        groupsForFabrication(item.leafProfiles || [], effectiveWindowPieceCount(item)).forEach((group) => {
+        groupsForFabricationItem(item, effectiveWindowPieceCount(item), rowKey(item)).forEach((group) => {
           const rule = rules[group.profile];
           if (!rule || !Number.isFinite(group.h) || !Number.isFinite(group.v)) return;
-          const vanoW = group.h + rule.vanoW;
-          const vanoH = group.v + rule.vanoH;
+          const vanoW = Number.isFinite(group.directVanoW) ? group.directVanoW : group.h + rule.vanoW;
+          const vanoH = Number.isFinite(group.directVanoH) ? group.directVanoH : group.v + rule.vanoH;
           const mosqW = vanoW + rule.mosqWAdd;
           const mosqH = vanoH + rule.mosqHAdd;
           const cutW = mosqW + rule.cutAdd;
@@ -1399,6 +1461,7 @@
             profile: group.profile,
             system: rule.system,
             closureType: closureType(rule.system),
+            sourceNote: group.sourceNote || '',
             pieceLabel,
             count,
             leafH: group.h,
@@ -1442,7 +1505,7 @@
         setStatus('No hay medidas calculadas para descargar.', true);
         return;
       }
-      const headers = ['Nomenclatura', 'Perfil hoja', 'Sistema', 'Tipo de cierre', 'Cuadros detectados', 'Hoja H', 'Hoja V', 'Vano ancho', 'Vano alto', 'Perfil horizontal para fabricar', 'Pzas horizontal', 'Pos horizontal', 'Perfil vertical para fabricar', 'Pzas vertical', 'Pos vertical', 'Medida final ancho', 'Medida final alto', 'Extra', 'Extra valor'];
+      const headers = ['Nomenclatura', 'Perfil hoja', 'Sistema', 'Tipo de cierre', 'Origen', 'Cuadros detectados', 'Hoja/Marco H', 'Hoja/Marco V', 'Vano ancho', 'Vano alto', 'Perfil horizontal para fabricar', 'Pzas horizontal', 'Pos horizontal', 'Perfil vertical para fabricar', 'Pzas vertical', 'Pos vertical', 'Medida final ancho', 'Medida final alto', 'Extra', 'Extra valor'];
       const fullHeaders = ['Tipo de mosquitero', 'Color', ...headers];
       const htmlRows = [
         `<tr>${fullHeaders.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr>`,
@@ -1453,6 +1516,7 @@
           <td>${escapeHtml(row.profile)}</td>
           <td>${escapeHtml(row.system)}</td>
           <td>${escapeHtml(row.closureType)}</td>
+          <td>${escapeHtml(row.sourceNote || 'Hoja normal')}</td>
           <td>${row.count}</td>
           <td>${fmtMm(row.leafH)}</td>
           <td>${fmtMm(row.leafV)}</td>
@@ -1889,10 +1953,10 @@
       rows.forEach((row, index) => {
         const h = 72;
         rect(margin, y - h + 8, pageW - margin * 2, h);
-        text(`Mosquitero ${row.workOrderNumber} de ${row.workOrderTotal} | ${row.nomenclature || 'Sin nomenclatura'} | ${row.pieceLabel}`, margin + 8, y - 8, 11, true);
+        text(`Mosquitero ${row.workOrderNumber} de ${row.workOrderTotal} | ${row.nomenclature || 'Sin nomenclatura'} | ${row.pieceLabel}${row.sourceNote ? ` | ${row.sourceNote}` : ''}`, margin + 8, y - 8, 11, true);
         text(`${row.profile} | ${row.system} | ${row.closureType} | ${row.meshType} | Color: ${row.color}`, margin + 8, y - 24, 8);
 
-        text(`Hoja HTF: H ${fmtMm(row.leafH)} mm / V ${fmtMm(row.leafV)} mm`, margin + 8, y - 42, 8);
+        text(`${row.sourceNote ? 'Marco HTF' : 'Hoja HTF'}: H ${fmtMm(row.leafH)} mm / V ${fmtMm(row.leafV)} mm`, margin + 8, y - 42, 8);
         text(`Vano: ${fmtMm(row.vanoW)} x ${fmtMm(row.vanoH)} mm`, margin + 220, y - 42, 8);
         text(`Medida final: ${fmtMm(row.mosqW)} x ${fmtMm(row.mosqH)} mm`, margin + 400, y - 42, 8);
         text(`Perfil horizontal: ${row.cutQty} pzas x ${fmtMm(row.cutW)} mm  Pos ${row.cutPosH}`, margin + 8, y - 58, 8, true);

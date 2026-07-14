@@ -202,6 +202,36 @@ def find_leaf_profiles(block_lines: list[dict]) -> list[dict]:
     return profiles
 
 
+def find_frame_profiles(block_lines: list[dict]) -> list[dict]:
+    profiles = []
+    for line in tronzadoras_lines(block_lines):
+        parsed = parse_frame_line(line)
+        if not parsed:
+            continue
+        profiles.append(parsed)
+    return profiles
+
+
+def find_inversora_profiles(block_lines: list[dict]) -> list[dict]:
+    profiles = []
+    for line in block_lines:
+        ref_match = re.match(r"^(?P<ref>\d{4,5}[^ ]*)\s+(?P<rest>.+)$", line["text"])
+        if not ref_match or "INVERSORA" not in plain_text(ref_match.group("rest")).upper():
+            continue
+        orient_match = re.search(r"\s(?P<long>[\d,.]+)\s+(?P<pos>[HV])\b", line["text"])
+        profiles.append(
+            {
+                "reference": ref_match.group("ref") if ref_match else "",
+                "description": re.sub(r"\s+", " ", ref_match.group("rest")).strip() if ref_match else line["text"],
+                "length": normalize_number(number_value(orient_match.group("long"))) if orient_match else "",
+                "orientation": orient_match.group("pos").upper() if orient_match else "",
+                "page": line["page"],
+                "raw": line["text"],
+            }
+        )
+    return profiles
+
+
 def parse_leaf_line(line: dict) -> dict | None:
     text = line["text"]
     if "HOJA" not in plain_text(text).upper():
@@ -239,6 +269,41 @@ def parse_leaf_line(line: dict) -> dict | None:
         "catalogDescription": catalog["description"] if catalog else "",
         "quantity": quantity,
         "totalQuantity": total_quantity,
+        "length": normalize_number(length),
+        "orientation": orient_match.group("pos").upper() if orient_match else "",
+        "page": line["page"],
+        "raw": text,
+    }
+
+
+def parse_frame_line(line: dict) -> dict | None:
+    text = line["text"]
+    plain = plain_text(text).upper()
+    if "MARCO" not in plain or "HOJA" in plain:
+        return None
+
+    ref_match = re.match(r"^(?P<ref>\d{4,5}[^ ]*)\s+(?P<rest>.+)$", text)
+    if not ref_match:
+        return None
+
+    ref = ref_match.group("ref")
+    rest = ref_match.group("rest")
+    orient_match = re.search(r"\s(?P<long>[\d,.]+)\s+(?P<pos>[HV])\b", rest)
+    series_match = re.search(r"Marco(?:\s+de)?\s+(?P<series>\d+)", rest, re.I)
+    qtys = []
+    description = rest
+    if orient_match:
+        description = rest[: orient_match.start()].strip()
+        qtys = re.findall(r"\b\d+\b", description)
+
+    length = number_value(orient_match.group("long")) if orient_match else None
+    return {
+        "reference": ref,
+        "profile": ref.split("---")[0].split(".")[0],
+        "series": series_match.group("series") if series_match else "",
+        "description": re.sub(r"\s+\d+\s+\d+$", "", re.sub(r"\s+", " ", description).strip()),
+        "quantity": int(qtys[-2]) if len(qtys) >= 2 else 0,
+        "totalQuantity": int(qtys[-1]) if len(qtys) >= 1 else 0,
         "length": normalize_number(length),
         "orientation": orient_match.group("pos").upper() if orient_match else "",
         "page": line["page"],
@@ -318,6 +383,8 @@ def extract_pdf(path: Path, display_name: str | None = None) -> dict:
         text = "\n".join(line["text"] for line in block_lines)
         notes = find_mosquito_notes(block_lines)
         profiles = find_leaf_profiles(block_lines)
+        frame_profiles = find_frame_profiles(block_lines)
+        inversora_profiles = find_inversora_profiles(block_lines)
         measure = find_final_measure(block_lines)
         nomenclature = find_nomenclature(block_lines)
         pages = sorted({line["page"] for line in block_lines})
@@ -333,6 +400,9 @@ def extract_pdf(path: Path, display_name: str | None = None) -> dict:
                     "mosquitoNotes": notes,
                     "finalMeasure": measure,
                     "leafProfiles": profiles,
+                    "frameProfiles": frame_profiles,
+                    "inversoraProfiles": inversora_profiles,
+                    "hasInversora": bool(inversora_profiles),
                     "rawPreview": text[:1800],
                     "confidence": confidence(has_mosquito, measure, profiles),
                 }
