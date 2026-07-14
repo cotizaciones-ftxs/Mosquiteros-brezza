@@ -1952,9 +1952,21 @@
       const pageW = 595;
       const pageH = 842;
       const margin = 28;
-      const pageRows = 28;
       const chunks = [];
-      for (let i = 0; i < rows.length; i += pageRows) chunks.push(rows.slice(i, i + pageRows));
+      let chunk = [];
+      let usedHeight = 0;
+      const usableHeight = pageH - 235;
+      rows.forEach((row) => {
+        const rowH = productionCutRowHeight(row);
+        if (chunk.length && usedHeight + rowH > usableHeight) {
+          chunks.push(chunk);
+          chunk = [];
+          usedHeight = 0;
+        }
+        chunk.push(row);
+        usedHeight += rowH;
+      });
+      if (chunk.length) chunks.push(chunk);
       const objects = [];
       const addObject = (body) => {
         objects.push(body);
@@ -2009,6 +2021,43 @@
       return concatPdfBytes(parts);
     }
 
+    function pdfWrapText(value, maxChars) {
+      const clean = pdfText(value);
+      if (!clean) return [''];
+      const words = clean.split(' ');
+      const lines = [];
+      let line = '';
+      words.forEach((word) => {
+        if (word.length > maxChars) {
+          if (line) {
+            lines.push(line);
+            line = '';
+          }
+          for (let i = 0; i < word.length; i += maxChars) lines.push(word.slice(i, i + maxChars));
+          return;
+        }
+        const next = line ? `${line} ${word}` : word;
+        if (next.length > maxChars) {
+          if (line) lines.push(line);
+          line = word;
+        } else {
+          line = next;
+        }
+      });
+      if (line) lines.push(line);
+      return lines.length ? lines : [''];
+    }
+
+    function productionCutRowHeight(row) {
+      const refs = row.extraRefs ? `${row.referenceText}; +${row.extraRefs} mas` : row.referenceText;
+      const lineCount = Math.max(
+        pdfWrapText(row.color || '', 22).length,
+        pdfWrapText(refs || '-', 34).length,
+        1
+      );
+      return Math.max(22, 13 + (lineCount * 9));
+    }
+
     function pdfPageContent(rows, page, totalPages, pageW, pageH, margin, hasLogo) {
       const commands = [];
       const line = (x1, y1, x2, y2) => commands.push(`${x1} ${y1} m ${x2} ${y2} l S`);
@@ -2056,6 +2105,9 @@
       const text = (value, x, y, size = 9, bold = false, color = '0 0 0') => {
         commands.push(`${color} rg`);
         commands.push(`BT /${bold ? 'F2' : 'F1'} ${size} Tf ${x} ${y} Td (${pdfEscape(pdfText(value))}) Tj ET`);
+      };
+      const multiText = (lines, x, y, size = 7, bold = false, color = '0 0 0') => {
+        lines.forEach((lineText, index) => text(lineText, x, y - (index * 9), size, bold, color));
       };
       const isMiterCut = selectedMeshType === 'brefix-45';
       const miterPiece = (x, y, w, h, fill) => {
@@ -2136,6 +2188,9 @@
         commands.push(`${color} rg`);
         commands.push(`BT /${bold ? 'F2' : 'F1'} ${size} Tf ${x} ${y} Td (${pdfEscape(pdfText(value))}) Tj ET`);
       };
+      const multiText = (lines, x, y, size = 7, bold = false, color = '0 0 0') => {
+        lines.forEach((lineText, index) => text(lineText, x, y - (index * 9), size, bold, color));
+      };
       const info = lastData?.documentInfo || {};
       const totalQty = allRows.reduce((sum, row) => sum + row.qty, 0);
       const totalMm = allRows.reduce((sum, row) => sum + row.totalMm, 0);
@@ -2173,17 +2228,17 @@
       y -= headerH;
 
       rows.forEach((row) => {
-        const rowH = 22;
+        const rowH = productionCutRowHeight(row);
         rect(tableX, y - rowH + 5, tableW, rowH);
         text(String(row.number), columns[0].x, y - 8, 7);
         text(shortPdfText(row.profileName, 14), columns[1].x, y - 8, 7, true);
-        text(shortPdfText(row.color || '', 20), columns[2].x, y - 8, 7);
+        multiText(pdfWrapText(row.color || '', 22), columns[2].x, y - 8, 7);
         text(row.angle, columns[3].x, y - 8, 7);
         text(`${row.qty} pzas`, columns[4].x, y - 8, 7, true);
         text(`${fmtMm(row.length)} mm`, columns[5].x, y - 8, 7, true);
         text(row.cutPos, columns[6].x, y - 8, 7, true);
         const refs = row.extraRefs ? `${row.referenceText}; +${row.extraRefs} mas` : row.referenceText;
-        text(shortPdfText(refs || '-', 30), columns[7].x, y - 8, 6);
+        multiText(pdfWrapText(refs || '-', 34), columns[7].x, y - 8, 6);
         y -= rowH;
       });
 
