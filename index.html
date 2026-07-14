@@ -1102,6 +1102,10 @@
             <input id="espertoCompound" type="text" value="(3+0)" placeholder="Ej. 3 hojas lateral, (3+0)">
           </div>
           <div class="form-field">
+            <label for="espertoOpening">Apertura</label>
+            <input id="espertoOpening" type="text" value="Lateral" placeholder="Ej. lateral, central, izquierda">
+          </div>
+          <div class="form-field">
             <label for="espertoMode">Tipo Esperto</label>
             <select id="espertoMode">
               <option value="auto">Automatico por alerta</option>
@@ -1329,6 +1333,7 @@
         height,
         color: $('espertoColor').value.trim() || '-',
         compound: $('espertoCompound').value.trim() || '-',
+        opening: $('espertoOpening').value.trim() || '-',
         mode,
         modeLabel: modeLabels[mode] || mode,
         panelWidth,
@@ -1350,6 +1355,7 @@
       $('espertoSummary').innerHTML = [
         ['Tipo sugerido', data.modeLabel],
         ['Compuesto', data.compound],
+        ['Apertura', data.opening],
         ['Ancho por pieza', `${fmtMm(data.panelWidth)} mm`],
         ['Alto', `${fmtMm(data.height)} mm`],
         ['Total hilos', String(data.totalWires)]
@@ -1418,6 +1424,7 @@
       text(`Ancho por pieza: ${fmtMm(data.panelWidth)} mm`, margin + 10, y - 38, 9, true);
       text(`Alto: ${fmtMm(data.height)} mm`, margin + 285, y - 38, 9, true);
       text(`Compuesto: ${shortPdfText(data.compound, 55)}`, margin + 10, y - 58, 9);
+      text(`Apertura: ${shortPdfText(data.opening, 55)}`, margin + 285, y - 58, 9);
       text(`Hilos: ${data.wires} + 2 = ${data.totalWires}`, margin + 10, y - 76, 9);
       text(`Pliegues: ${data.folds}`, margin + 285, y - 76, 9);
       text('Seccion de perfiles y tela', margin + 10, y - 88, 10, true);
@@ -2927,7 +2934,7 @@
       $('espertoStatus').textContent = error.message;
       $('espertoStatus').style.color = 'var(--danger)';
     }));
-    ['espertoCustomer', 'espertoDate', 'espertoQty', 'espertoWidth', 'espertoHeight', 'espertoColor', 'espertoCompound', 'espertoMode'].forEach((id) => {
+    ['espertoCustomer', 'espertoDate', 'espertoQty', 'espertoWidth', 'espertoHeight', 'espertoColor', 'espertoCompound', 'espertoOpening', 'espertoMode'].forEach((id) => {
       $(id).addEventListener('input', renderEsperto);
       $(id).addEventListener('change', renderEsperto);
     });
