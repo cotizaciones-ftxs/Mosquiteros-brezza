@@ -1838,18 +1838,18 @@
       };
       const info = lastData?.documentInfo || {};
       const headerY = pageH - margin - 22;
-      fillRect(margin, pageH - 112, pageW - margin * 2, 86, '0.04 0.32 0.52');
+      fillRect(margin, pageH - 126, pageW - margin * 2, 100, '0.04 0.32 0.52');
       commands.push('1 1 1 rg');
       text('HTF MOSQUITEROS BREZZA', margin + 12, headerY, 17, true);
       text(`Presupuesto no.: ${info.budget || '-'}    Cliente: ${info.client || '-'}`, margin + 12, headerY - 17, 9, true);
       text(`Archivo: ${lastData?.fileName || '-'}`, margin + 12, headerY - 33, 8);
       text(`Tipo: ${meshTypeLabels[selectedMeshType] || selectedMeshType}`, margin + 12, headerY - 49, 10, true);
-      text(`Color: ${selectedColorLabel()}`, margin + 12, headerY - 64, 10, true);
+      text(`Color: ${shortPdfText(selectedColorLabel(), 58)}`, margin + 12, headerY - 64, 10, true);
       text(`Total mosquiteros: ${rows[0]?.workOrderTotal || 0}    Fecha: ${new Date().toLocaleDateString('es-MX')}    Pagina ${page} de ${totalPages}`, pageW - 340, headerY - 49, 8);
       if (hasLogo) commands.push(`q 54 0 0 54 ${pageW - margin - 68} ${pageH - 96} cm /Logo Do Q`);
       commands.push('0 0 0 rg');
 
-      let y = pageH - 132;
+      let y = pageH - 146;
       rows.forEach((row, index) => {
         const h = 72;
         rect(margin, y - h + 8, pageW - margin * 2, h);
@@ -1883,18 +1883,18 @@
       const totalWaste = allRows.reduce((sum, row) => sum + row.waste, 0);
       const stockLength = stockLengthForMeshType();
       const headerY = pageH - margin - 22;
-      fillRect(margin, pageH - 112, pageW - margin * 2, 86, '0.04 0.32 0.52');
+      fillRect(margin, pageH - 126, pageW - margin * 2, 100, '0.04 0.32 0.52');
       commands.push('1 1 1 rg');
       text('OPTIMIZACION DE CORTE MOSQUITEROS', margin + 12, headerY, 17, true, '1 1 1');
       text(`Presupuesto no.: ${info.budget || '-'}    Cliente: ${info.client || '-'}`, margin + 12, headerY - 17, 9, true, '1 1 1');
       text(`Archivo: ${lastData?.fileName || '-'}`, margin + 12, headerY - 33, 8, false, '1 1 1');
       text(`${stockProfileName()} - barra ${stockLength} mm | Tipo: ${meshTypeLabels[selectedMeshType] || selectedMeshType}`, margin + 12, headerY - 49, 10, true, '1 1 1');
-      text(`Color: ${selectedColorLabel()}`, margin + 12, headerY - 64, 10, true, '1 1 1');
+      text(`Color: ${shortPdfText(selectedColorLabel(), 58)}`, margin + 12, headerY - 64, 10, true, '1 1 1');
       text(`Barras: ${allRows.length}    Piezas: ${totalPieces}    Sobrante total: ${fmtMm(totalWaste)} mm    Pagina ${page} de ${totalPages}`, pageW - 410, headerY - 49, 8, false, '1 1 1');
       if (hasLogo) commands.push(`q 54 0 0 54 ${pageW - margin - 68} ${pageH - 96} cm /Logo Do Q`);
       commands.push('0 0 0 rg');
 
-      let y = pageH - 132;
+      let y = pageH - 146;
       text('Cada rectangulo representa una barra completa. Los tramos internos son los cortes optimizados.', margin, y, 8);
       y -= 22;
 
@@ -1953,29 +1953,29 @@
       const totalQty = allRows.reduce((sum, row) => sum + row.qty, 0);
       const totalMm = allRows.reduce((sum, row) => sum + row.totalMm, 0);
       const headerY = pageH - margin - 22;
-      fillRect(margin, pageH - 112, pageW - margin * 2, 86, '0.04 0.32 0.52');
+      fillRect(margin, pageH - 126, pageW - margin * 2, 100, '0.04 0.32 0.52');
       text('LISTA DE CORTES MOSQUITEROS', margin + 12, headerY, 17, true, '1 1 1');
       text(`Presupuesto no.: ${info.budget || '-'}    Cliente: ${info.client || '-'}`, margin + 12, headerY - 17, 9, true, '1 1 1');
       text(`Archivo: ${lastData?.fileName || '-'}`, margin + 12, headerY - 33, 8, false, '1 1 1');
       text(`${stockProfileName()} | Tipo: ${meshTypeLabels[selectedMeshType] || selectedMeshType}`, margin + 12, headerY - 49, 10, true, '1 1 1');
-      text(`Color: ${selectedColorLabel()}`, margin + 12, headerY - 64, 10, true, '1 1 1');
+      text(`Color: ${shortPdfText(selectedColorLabel(), 58)}`, margin + 12, headerY - 64, 10, true, '1 1 1');
       text(`Piezas: ${totalQty}    Longitud total: ${fmtMm(totalMm)} mm    Pagina ${page} de ${totalPages}`, pageW - 330, headerY - 49, 8, false, '1 1 1');
       if (hasLogo) commands.push(`q 54 0 0 54 ${pageW - margin - 68} ${pageH - 96} cm /Logo Do Q`);
       commands.push('0 0 0 rg');
 
-      let y = pageH - 135;
+      let y = pageH - 149;
       text('Documento para produccion: cortar todos los perfiles antes de armar mosquiteros.', margin, y, 8);
       y -= 20;
 
       const columns = [
         { title: '#', x: margin + 6, w: 24 },
-        { title: 'Perfil', x: margin + 32, w: 95 },
-        { title: 'Color', x: margin + 130, w: 62 },
-        { title: 'Angulo', x: margin + 195, w: 62 },
-        { title: 'Uso', x: margin + 260, w: 70 },
-        { title: 'Cantidad', x: margin + 333, w: 54 },
-        { title: 'Longitud', x: margin + 390, w: 70 },
-        { title: 'Referencia', x: margin + 463, w: pageW - margin * 2 - 463 + margin },
+        { title: 'Perfil', x: margin + 32, w: 88 },
+        { title: 'Color', x: margin + 122, w: 145 },
+        { title: 'Angulo', x: margin + 270, w: 58 },
+        { title: 'Uso', x: margin + 330, w: 70 },
+        { title: 'Cantidad', x: margin + 402, w: 54 },
+        { title: 'Longitud', x: margin + 458, w: 70 },
+        { title: 'Referencia', x: margin + 530, w: pageW - margin * 2 - 530 + margin },
       ];
       const tableX = margin;
       const tableW = pageW - margin * 2;
@@ -1990,13 +1990,13 @@
         rect(tableX, y - rowH + 5, tableW, rowH);
         text(String(row.number), columns[0].x, y - 8, 7);
         text(shortPdfText(row.profileName, 18), columns[1].x, y - 8, 7, true);
-        text(row.color || '', columns[2].x, y - 8, 7);
+        text(shortPdfText(row.color || '', 27), columns[2].x, y - 8, 7);
         text(row.angle, columns[3].x, y - 8, 7);
         text(`${row.orientation} (${row.code})`, columns[4].x, y - 8, 7);
         text(`${row.qty} pzas`, columns[5].x, y - 8, 7, true);
         text(`${fmtMm(row.length)} mm`, columns[6].x, y - 8, 7, true);
         const refs = row.extraRefs ? `${row.referenceText}; +${row.extraRefs} mas` : row.referenceText;
-        text(shortPdfText(refs || '-', 78), columns[7].x, y - 8, 6);
+        text(shortPdfText(refs || '-', 50), columns[7].x, y - 8, 6);
         y -= rowH;
       });
 
