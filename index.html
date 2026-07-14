@@ -1136,11 +1136,12 @@
         const cutH = mosqH + rule.cutAdd;
         const count = group.count || 1;
         const cutQty = count * 2;
+        const cutMark = cutEndMarkForMeshType();
         const pieceLabel = group.pieceTotal > 1 ? `Cuadro ${group.pieceIndex} de ${group.pieceTotal}` : 'Cuadro 1';
         const discardToken = cardToken(group);
         const extra = calcExtra(rule, mosqW, mosqH, count);
         const extraCopy = extra ? ` | ${extra.label}: ${extra.value}` : '';
-        const copyText = `${group.profile} | ${meshTypeLabels[selectedMeshType]} | ${pieceLabel} | Vano: ${fmtMm(vanoW)} x ${fmtMm(vanoH)} mm | Perfil mosquitero: ${cutQty} pzas x ${fmtMm(cutW)} mm horizontal, ${cutQty} pzas x ${fmtMm(cutH)} mm vertical | Medida final mosquitero: ${fmtMm(mosqW)} x ${fmtMm(mosqH)} mm${extraCopy}`;
+        const copyText = `${group.profile} | ${meshTypeLabels[selectedMeshType]} | ${pieceLabel} | Vano: ${fmtMm(vanoW)} x ${fmtMm(vanoH)} mm | Perfil mosquitero: ${cutQty} pzas x ${cutMark} ${fmtMm(cutW)} mm horizontal, ${cutQty} pzas x ${cutMark} ${fmtMm(cutH)} mm vertical | Medida final mosquitero: ${fmtMm(mosqW)} x ${fmtMm(mosqH)} mm${extraCopy}`;
         const cutTipW = rule.cutAdd === 0
           ? `Perfil para mosquitero: en corte a 45 el perfil ancho queda igual a la medida final ancho ${fmtMm(mosqW)}. Son ${cutQty} piezas.`
           : `Perfil para mosquitero: ancho = medida final ancho ${fmtMm(mosqW)} ${signed(rule.cutAdd)}. Son ${cutQty} piezas.`;
@@ -1159,8 +1160,8 @@
             <div class="calc-values">
               <span class="wide has-tip" data-tip="${escapeHtmlAttr(`Medidas tomadas de la HTF en 01TRONZADORAS DE PERFIL: hoja horizontal ${fmtMm(group.h)} mm y hoja vertical ${fmtMm(group.v)} mm.`)}">Medida hoja HTF<strong>H ${fmtMm(group.h)} mm / V ${fmtMm(group.v)} mm</strong></span>
               <span class="wide has-tip" data-tip="${escapeHtmlAttr(`Vano = hoja H ${fmtMm(group.h)} ${signed(rule.vanoW)} y hoja V ${fmtMm(group.v)} ${signed(rule.vanoH)}.`)}">Vano<strong>${fmtMm(vanoW)} x ${fmtMm(vanoH)} mm</strong></span>
-              <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipW)}">Perfil horizontal para fabricar<strong>${cutQty} pzas x ${fmtMm(cutW)} mm</strong></span>
-              <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipH)}">Perfil vertical para fabricar<strong>${cutQty} pzas x ${fmtMm(cutH)} mm</strong></span>
+              <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipW)}">Perfil horizontal para fabricar<strong>${cutQty} pzas x ${escapeHtml(cutMark)} ${fmtMm(cutW)} mm</strong></span>
+              <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipH)}">Perfil vertical para fabricar<strong>${cutQty} pzas x ${escapeHtml(cutMark)} ${fmtMm(cutH)} mm</strong></span>
               <span class="has-tip" data-tip="${escapeHtmlAttr(`Medida final del mosquitero: ancho = vano ancho ${fmtMm(vanoW)} ${signed(rule.mosqWAdd)}.`)}">Medida final ancho<strong>${fmtMm(mosqW)} mm</strong></span>
               <span class="has-tip" data-tip="${escapeHtmlAttr(`Medida final del mosquitero: alto = vano alto ${fmtMm(vanoH)} ${signed(rule.mosqHAdd)}.`)}">Medida final alto<strong>${fmtMm(mosqH)} mm</strong></span>
               ${extra ? `<span class="wide has-tip" data-tip="${escapeHtmlAttr(extra.tip)}">${escapeHtml(extra.label)}<strong>${escapeHtml(extra.value)}</strong></span>` : ''}
@@ -1365,6 +1366,7 @@
           const cutH = mosqH + rule.cutAdd;
           const count = group.count || 1;
           const cutQty = count * 2;
+          const cutMark = cutEndMarkForMeshType();
           const extra = calcExtra(rule, mosqW, mosqH, count);
           const pieceLabel = group.pieceTotal > 1 ? `Cuadro ${group.pieceIndex} de ${group.pieceTotal}` : 'Cuadro 1';
           rows.push({
@@ -1387,6 +1389,7 @@
             cutW,
             cutH,
             cutQty,
+            cutMark,
             extraLabel: extra ? extra.label : '',
             extraValue: extra ? extra.value : ''
           });
@@ -1433,9 +1436,9 @@
           <td>${fmtMm(row.leafV)}</td>
           <td>${fmtMm(row.vanoW)}</td>
           <td>${fmtMm(row.vanoH)}</td>
-          <td>${fmtMm(row.cutW)}</td>
+          <td>${escapeHtml(row.cutMark)} ${fmtMm(row.cutW)}</td>
           <td>${row.cutQty}</td>
-          <td>${fmtMm(row.cutH)}</td>
+          <td>${escapeHtml(row.cutMark)} ${fmtMm(row.cutH)}</td>
           <td>${row.cutQty}</td>
           <td>${fmtMm(row.mosqW)}</td>
           <td>${fmtMm(row.mosqH)}</td>
@@ -1528,6 +1531,7 @@
             meshType: meshTypeLabels[selectedMeshType] || selectedMeshType,
             color: selectedColorLabel(),
             angle: angleLabelForMeshType(),
+            cutMark: cutEndMarkForMeshType(),
             orientation: cut.orientation,
             code: cut.code,
             length: cut.length,
@@ -1608,7 +1612,7 @@
         });
         const cutText = Array.from(grouped.values())
           .sort((a, b) => b.length - a.length || a.use.localeCompare(b.use))
-          .map((item) => `${item.qty} x ${fmtMm(item.length)} ${item.use}`)
+          .map((item) => `${item.qty} x ${cutEndMarkForMeshType()} ${fmtMm(item.length)} ${item.use}`)
           .join(' | ');
         const groupedCuts = Array.from(grouped.values())
           .sort((a, b) => b.length - a.length || a.use.localeCompare(b.use));
@@ -1638,6 +1642,10 @@
 
     function angleLabelForMeshType() {
       return selectedMeshType === 'brefix-45' ? '45 grados' : '90 grados';
+    }
+
+    function cutEndMarkForMeshType() {
+      return selectedMeshType === 'brefix-45' ? '/ \\' : 'I I';
     }
 
     function buildWorkOrderPdf(rows, logoBytes) {
@@ -1859,8 +1867,8 @@
         text(`Hoja HTF: H ${fmtMm(row.leafH)} mm / V ${fmtMm(row.leafV)} mm`, margin + 8, y - 42, 8);
         text(`Vano: ${fmtMm(row.vanoW)} x ${fmtMm(row.vanoH)} mm`, margin + 220, y - 42, 8);
         text(`Medida final: ${fmtMm(row.mosqW)} x ${fmtMm(row.mosqH)} mm`, margin + 400, y - 42, 8);
-        text(`Perfil horizontal: ${row.cutQty} pzas x ${fmtMm(row.cutW)} mm`, margin + 8, y - 58, 8, true);
-        text(`Perfil vertical: ${row.cutQty} pzas x ${fmtMm(row.cutH)} mm`, margin + 260, y - 58, 8, true);
+        text(`Perfil horizontal: ${row.cutQty} pzas x ${row.cutMark} ${fmtMm(row.cutW)} mm`, margin + 8, y - 58, 8, true);
+        text(`Perfil vertical: ${row.cutQty} pzas x ${row.cutMark} ${fmtMm(row.cutH)} mm`, margin + 260, y - 58, 8, true);
         if (row.extraLabel) text(`${row.extraLabel}: ${row.extraValue}`, margin + 500, y - 58, 8);
         y -= h + 8;
       });
@@ -1927,7 +1935,7 @@
               fillRect(x, barY, w, barH, fill);
               rect(x, barY, w, barH);
             }
-            if (w > 34) text(`${fmtMm(cut.length)} ${cut.use}`, x + 3, barY + 9, 6, true);
+            if (w > 34) text(`${cutEndMarkForMeshType()} ${fmtMm(cut.length)} ${cut.use}`, x + 3, barY + 9, 6, true);
             x += w;
           }
         });
@@ -2004,7 +2012,7 @@
         text(row.angle, columns[3].x, y - 8, 7);
         text(`${row.orientation} (${row.code})`, columns[4].x, y - 8, 7);
         text(`${row.qty} pzas`, columns[5].x, y - 8, 7, true);
-        text(`${fmtMm(row.length)} mm`, columns[6].x, y - 8, 7, true);
+        text(`${row.cutMark} ${fmtMm(row.length)} mm`, columns[6].x, y - 8, 7, true);
         const refs = row.extraRefs ? `${row.referenceText}; +${row.extraRefs} mas` : row.referenceText;
         text(shortPdfText(refs || '-', 50), columns[7].x, y - 8, 6);
         y -= rowH;
