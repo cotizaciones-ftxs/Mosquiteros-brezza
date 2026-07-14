@@ -537,6 +537,7 @@
       color: var(--accent-dark);
       font-family: Consolas, "Courier New", monospace;
       font-size: 13px;
+      font-style: normal;
       font-weight: 800;
       letter-spacing: 1px;
       white-space: nowrap;
@@ -1179,8 +1180,8 @@
             <div class="calc-values">
               <span class="wide has-tip" data-tip="${escapeHtmlAttr(`Medidas tomadas de la HTF en 01TRONZADORAS DE PERFIL: hoja horizontal ${fmtMm(group.h)} mm y hoja vertical ${fmtMm(group.v)} mm.`)}">Medida hoja HTF<strong>H ${fmtMm(group.h)} mm / V ${fmtMm(group.v)} mm</strong></span>
               <span class="wide has-tip" data-tip="${escapeHtmlAttr(`Vano = hoja H ${fmtMm(group.h)} ${signed(rule.vanoW)} y hoja V ${fmtMm(group.v)} ${signed(rule.vanoH)}.`)}">Vano<strong>${fmtMm(vanoW)} x ${fmtMm(vanoH)} mm</strong></span>
-              <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipW)}">Perfil horizontal para fabricar <em class="cut-position">Pos ${escapeHtml(cutPosH)}</em><strong>${cutQty} pzas x ${fmtMm(cutW)} mm</strong></span>
-              <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipH)}">Perfil vertical para fabricar <em class="cut-position">Pos ${escapeHtml(cutPosV)}</em><strong>${cutQty} pzas x ${fmtMm(cutH)} mm</strong></span>
+              <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipW)}">Perfil horizontal para fabricar <span class="cut-position">Pos ${escapeHtml(cutPosH)}</span><strong>${cutQty} pzas x ${fmtMm(cutW)} mm</strong></span>
+              <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipH)}">Perfil vertical para fabricar <span class="cut-position">Pos ${escapeHtml(cutPosV)}</span><strong>${cutQty} pzas x ${fmtMm(cutH)} mm</strong></span>
               <span class="has-tip" data-tip="${escapeHtmlAttr(`Medida final del mosquitero: ancho = vano ancho ${fmtMm(vanoW)} ${signed(rule.mosqWAdd)}.`)}">Medida final ancho<strong>${fmtMm(mosqW)} mm</strong></span>
               <span class="has-tip" data-tip="${escapeHtmlAttr(`Medida final del mosquitero: alto = vano alto ${fmtMm(vanoH)} ${signed(rule.mosqHAdd)}.`)}">Medida final alto<strong>${fmtMm(mosqH)} mm</strong></span>
               ${extra ? `<span class="wide has-tip" data-tip="${escapeHtmlAttr(extra.tip)}">${escapeHtml(extra.label)}<strong>${escapeHtml(extra.value)}</strong></span>` : ''}
