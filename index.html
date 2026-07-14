@@ -1085,8 +1085,10 @@
         $('rowsBody').innerHTML = '<tr><td colspan="8">No encontré ventanas con texto MOSQUITERO. Revisa el texto crudo o mándame este PDF para ajustar el detector.</td></tr>';
       }
       const errors = data.errors || [];
+      const warnings = data.warnings || [];
       const errorText = errors.length ? ` ${errors.length} PDF(s) no se pudieron leer.` : '';
-      setStatus(`Listo. Se muestran ${data.mosquitoCount || 0} ventana(s) con nota de mosquitero.${errorText}`);
+      const warningText = warnings.length ? ` ${warnings.map((warning) => warning.message).join(' ')}` : '';
+      setStatus(`Listo. Se muestran ${data.mosquitoCount || 0} ventana(s) con nota de mosquitero.${errorText}${warningText}`, warnings.length > 0);
     }
 
     function rowHtml(item) {
@@ -1756,10 +1758,10 @@
         row.workOrderNumber = index + 1;
         row.workOrderTotal = rows.length;
       });
-      const pageW = 842;
-      const pageH = 595;
+      const pageW = 595;
+      const pageH = 842;
       const margin = 28;
-      const pageRows = 5;
+      const pageRows = 6;
       const chunks = [];
       for (let i = 0; i < rows.length; i += pageRows) chunks.push(rows.slice(i, i + pageRows));
       const objects = [];
@@ -1818,10 +1820,10 @@
     }
 
     function buildCutListPdf(rows, logoBytes) {
-      const pageW = 842;
-      const pageH = 595;
+      const pageW = 595;
+      const pageH = 842;
       const margin = 28;
-      const pageRows = 6;
+      const pageRows = 8;
       const chunks = [];
       for (let i = 0; i < rows.length; i += pageRows) chunks.push(rows.slice(i, i + pageRows));
       const objects = [];
@@ -1879,10 +1881,10 @@
     }
 
     function buildProductionCutListPdf(rows, logoBytes) {
-      const pageW = 842;
-      const pageH = 595;
+      const pageW = 595;
+      const pageH = 842;
       const margin = 28;
-      const pageRows = 18;
+      const pageRows = 28;
       const chunks = [];
       for (let i = 0; i < rows.length; i += pageRows) chunks.push(rows.slice(i, i + pageRows));
       const objects = [];
@@ -1949,31 +1951,31 @@
       };
       const info = lastData?.documentInfo || {};
       const headerY = pageH - margin - 22;
-      fillRect(margin, pageH - 126, pageW - margin * 2, 100, '0.04 0.32 0.52');
+      fillRect(margin, pageH - 146, pageW - margin * 2, 120, '0.04 0.32 0.52');
       commands.push('1 1 1 rg');
-      text('HTF MOSQUITEROS BREZZA', margin + 12, headerY, 17, true);
-      text(`Presupuesto no.: ${info.budget || '-'}    Cliente: ${info.client || '-'}`, margin + 12, headerY - 17, 9, true);
+      text('HTF MOSQUITEROS BREZZA', margin + 12, headerY, 15, true);
+      text(`Presupuesto no.: ${info.budget || ''}    Cliente: ${shortPdfText(info.client || '-', 42)}`, margin + 12, headerY - 17, 9, true);
       text(`Archivo: ${lastData?.fileName || '-'}`, margin + 12, headerY - 33, 8);
       text(`Tipo: ${meshTypeLabels[selectedMeshType] || selectedMeshType}`, margin + 12, headerY - 49, 10, true);
       text(`Color: ${shortPdfText(selectedColorLabel(), 58)}`, margin + 12, headerY - 64, 10, true);
-      text(`Total mosquiteros: ${rows[0]?.workOrderTotal || 0}    Fecha: ${new Date().toLocaleDateString('es-MX')}    Pagina ${page} de ${totalPages}`, pageW - 340, headerY - 49, 8);
-      if (hasLogo) commands.push(`q 54 0 0 54 ${pageW - margin - 68} ${pageH - 96} cm /Logo Do Q`);
+      text(`Total mosquiteros: ${rows[0]?.workOrderTotal || 0}    Fecha: ${new Date().toLocaleDateString('es-MX')}    Pagina ${page} de ${totalPages}`, margin + 12, headerY - 80, 8);
+      if (hasLogo) commands.push(`q 48 0 0 48 ${pageW - margin - 62} ${pageH - 96} cm /Logo Do Q`);
       commands.push('0 0 0 rg');
 
-      let y = pageH - 146;
+      let y = pageH - 166;
       rows.forEach((row, index) => {
-        const h = 72;
+        const h = 98;
         rect(margin, y - h + 8, pageW - margin * 2, h);
         text(`Mosquitero ${row.workOrderNumber} de ${row.workOrderTotal} | ${row.nomenclature || 'Sin nomenclatura'} | ${row.pieceLabel}${row.sourceNote ? ` | ${row.sourceNote}` : ''}`, margin + 8, y - 8, 11, true);
         const sourceLabel = row.sourceFile ? ` | Archivo: ${shortPdfText(row.sourceFile, 34)}` : '';
         text(`${row.profile} | ${row.system} | ${row.closureType} | ${row.meshType} | Color: ${row.color}${sourceLabel}`, margin + 8, y - 24, 8);
 
         text(`${row.sourceNote ? 'Marco HTF' : 'Hoja HTF'}: H ${fmtMm(row.leafH)} mm / V ${fmtMm(row.leafV)} mm`, margin + 8, y - 42, 8);
-        text(`Vano: ${fmtMm(row.vanoW)} x ${fmtMm(row.vanoH)} mm`, margin + 220, y - 42, 8);
-        text(`Medida final: ${fmtMm(row.mosqW)} x ${fmtMm(row.mosqH)} mm`, margin + 400, y - 42, 8);
-        text(`Perfil horizontal: ${row.cutQty} pzas x ${fmtMm(row.cutW)} mm  Pos ${row.cutPosH}`, margin + 8, y - 58, 8, true);
-        text(`Perfil vertical: ${row.cutQty} pzas x ${fmtMm(row.cutH)} mm  Pos ${row.cutPosV}`, margin + 260, y - 58, 8, true);
-        if (row.extraLabel) text(`${row.extraLabel}: ${row.extraValue}`, margin + 500, y - 58, 8);
+        text(`Vano: ${fmtMm(row.vanoW)} x ${fmtMm(row.vanoH)} mm`, margin + 8, y - 58, 8);
+        text(`Medida final: ${fmtMm(row.mosqW)} x ${fmtMm(row.mosqH)} mm`, margin + 220, y - 58, 8);
+        text(`Perfil horizontal: ${row.cutQty} pzas x ${fmtMm(row.cutW)} mm  Pos ${row.cutPosH}`, margin + 8, y - 76, 8, true);
+        text(`Perfil vertical: ${row.cutQty} pzas x ${fmtMm(row.cutH)} mm  Pos ${row.cutPosV}`, margin + 8, y - 92, 8, true);
+        if (row.extraLabel) text(`${row.extraLabel}: ${row.extraValue}`, margin + 330, y - 92, 8);
         y -= h + 8;
       });
       return commands.join('\n');
@@ -1999,31 +2001,31 @@
       const totalWaste = allRows.reduce((sum, row) => sum + row.waste, 0);
       const stockLength = stockLengthForMeshType();
       const headerY = pageH - margin - 22;
-      fillRect(margin, pageH - 126, pageW - margin * 2, 100, '0.04 0.32 0.52');
+      fillRect(margin, pageH - 146, pageW - margin * 2, 120, '0.04 0.32 0.52');
       commands.push('1 1 1 rg');
-      text('OPTIMIZACION DE CORTE MOSQUITEROS', margin + 12, headerY, 17, true, '1 1 1');
-      text(`Presupuesto no.: ${info.budget || '-'}    Cliente: ${info.client || '-'}`, margin + 12, headerY - 17, 9, true, '1 1 1');
+      text('OPTIMIZACION DE CORTE MOSQUITEROS', margin + 12, headerY, 14, true, '1 1 1');
+      text(`Presupuesto no.: ${info.budget || ''}    Cliente: ${shortPdfText(info.client || '-', 42)}`, margin + 12, headerY - 17, 9, true, '1 1 1');
       text(`Archivo: ${lastData?.fileName || '-'}`, margin + 12, headerY - 33, 8, false, '1 1 1');
       text(`${stockProfileName()} - barra ${stockLength} mm | Tipo: ${meshTypeLabels[selectedMeshType] || selectedMeshType}`, margin + 12, headerY - 49, 10, true, '1 1 1');
       text(`Color: ${shortPdfText(selectedColorLabel(), 58)}`, margin + 12, headerY - 64, 10, true, '1 1 1');
-      text(`Barras: ${allRows.length}    Piezas: ${totalPieces}    Sobrante total: ${fmtMm(totalWaste)} mm    Pagina ${page} de ${totalPages}`, pageW - 410, headerY - 49, 8, false, '1 1 1');
-      if (hasLogo) commands.push(`q 54 0 0 54 ${pageW - margin - 68} ${pageH - 96} cm /Logo Do Q`);
+      text(`Barras: ${allRows.length}    Piezas: ${totalPieces}    Sobrante total: ${fmtMm(totalWaste)} mm    Pagina ${page} de ${totalPages}`, margin + 12, headerY - 80, 8, false, '1 1 1');
+      if (hasLogo) commands.push(`q 48 0 0 48 ${pageW - margin - 62} ${pageH - 96} cm /Logo Do Q`);
       commands.push('0 0 0 rg');
 
-      let y = pageH - 146;
+      let y = pageH - 166;
       text('Cada rectangulo representa una barra completa. Los tramos internos son los cortes optimizados.', margin, y, 8);
       y -= 22;
 
       rows.forEach((row) => {
         const rowTop = y;
-        const barX = margin + 86;
+        const barX = margin + 62;
         const barY = y - 28;
-        const barW = pageW - margin * 2 - 120;
+        const barW = pageW - margin * 2 - 74;
         const barH = 24;
         text(`Barra ${row.barNumber}`, margin, rowTop, 10, true);
         text(`${row.profileName} ${fmtMm(row.stockLength)} mm`, margin, rowTop - 14, 7);
-        text(`Usado ${fmtMm(row.used)} mm`, pageW - margin - 178, rowTop, 8, true);
-        text(`Sobrante ${fmtMm(row.waste)} mm`, pageW - margin - 92, rowTop, 8, true);
+        text(`Usado ${fmtMm(row.used)} mm`, barX, rowTop - 14, 7, true);
+        text(`Sobrante ${fmtMm(row.waste)} mm`, barX + 90, rowTop - 14, 7, true);
         fillRect(barX, barY, barW, barH, '0.96 0.98 1.00');
         rect(barX, barY, barW, barH);
         let x = barX;
@@ -2049,10 +2051,10 @@
             if (wasteW > 32) text('sobrante', x + 3, barY + 9, 6);
           }
         }
-        text(shortPdfText(row.cutText, 105), barX, barY - 12, 7, true);
+        text(shortPdfText(row.cutText, 78), barX, barY - 12, 7, true);
         const refs = row.extraRefs ? `${row.references}; +${row.extraRefs} mas` : row.references;
-        text(shortPdfText(refs || '-', 110), barX, barY - 24, 6);
-        y -= 76;
+        text(shortPdfText(refs || '-', 82), barX, barY - 24, 6);
+        y -= 78;
       });
 
       return commands.join('\n');
@@ -2071,29 +2073,29 @@
       const totalQty = allRows.reduce((sum, row) => sum + row.qty, 0);
       const totalMm = allRows.reduce((sum, row) => sum + row.totalMm, 0);
       const headerY = pageH - margin - 22;
-      fillRect(margin, pageH - 126, pageW - margin * 2, 100, '0.04 0.32 0.52');
-      text('LISTA DE CORTES MOSQUITEROS', margin + 12, headerY, 17, true, '1 1 1');
-      text(`Presupuesto no.: ${info.budget || '-'}    Cliente: ${info.client || '-'}`, margin + 12, headerY - 17, 9, true, '1 1 1');
+      fillRect(margin, pageH - 146, pageW - margin * 2, 120, '0.04 0.32 0.52');
+      text('LISTA DE CORTES MOSQUITEROS', margin + 12, headerY, 15, true, '1 1 1');
+      text(`Presupuesto no.: ${info.budget || ''}    Cliente: ${shortPdfText(info.client || '-', 42)}`, margin + 12, headerY - 17, 9, true, '1 1 1');
       text(`Archivo: ${lastData?.fileName || '-'}`, margin + 12, headerY - 33, 8, false, '1 1 1');
       text(`${stockProfileName()} | Tipo: ${meshTypeLabels[selectedMeshType] || selectedMeshType}`, margin + 12, headerY - 49, 10, true, '1 1 1');
       text(`Color: ${shortPdfText(selectedColorLabel(), 58)}`, margin + 12, headerY - 64, 10, true, '1 1 1');
-      text(`Piezas: ${totalQty}    Longitud total: ${fmtMm(totalMm)} mm    Pagina ${page} de ${totalPages}`, pageW - 330, headerY - 49, 8, false, '1 1 1');
-      if (hasLogo) commands.push(`q 54 0 0 54 ${pageW - margin - 68} ${pageH - 96} cm /Logo Do Q`);
+      text(`Piezas: ${totalQty}    Longitud total: ${fmtMm(totalMm)} mm    Pagina ${page} de ${totalPages}`, margin + 12, headerY - 80, 8, false, '1 1 1');
+      if (hasLogo) commands.push(`q 48 0 0 48 ${pageW - margin - 62} ${pageH - 96} cm /Logo Do Q`);
       commands.push('0 0 0 rg');
 
-      let y = pageH - 149;
+      let y = pageH - 169;
       text('Documento para produccion: cortar todos los perfiles antes de armar mosquiteros.', margin, y, 8);
       y -= 20;
 
       const columns = [
-        { title: '#', x: margin + 6, w: 24 },
-        { title: 'Perfil', x: margin + 32, w: 88 },
-        { title: 'Color', x: margin + 122, w: 145 },
-        { title: 'Angulo', x: margin + 270, w: 58 },
-        { title: 'Cantidad', x: margin + 330, w: 54 },
-        { title: 'Medidas', x: margin + 386, w: 70 },
-        { title: 'Pos', x: margin + 458, w: 58 },
-        { title: 'Referencia', x: margin + 518, w: pageW - margin * 2 - 518 + margin },
+        { title: '#', x: margin + 5, w: 20 },
+        { title: 'Perfil', x: margin + 28, w: 68 },
+        { title: 'Color', x: margin + 98, w: 105 },
+        { title: 'Angulo', x: margin + 205, w: 48 },
+        { title: 'Cantidad', x: margin + 255, w: 50 },
+        { title: 'Medidas', x: margin + 307, w: 58 },
+        { title: 'Pos', x: margin + 367, w: 45 },
+        { title: 'Referencia', x: margin + 414, w: pageW - margin * 2 - 414 + margin },
       ];
       const tableX = margin;
       const tableW = pageW - margin * 2;
@@ -2107,14 +2109,14 @@
         const rowH = 22;
         rect(tableX, y - rowH + 5, tableW, rowH);
         text(String(row.number), columns[0].x, y - 8, 7);
-        text(shortPdfText(row.profileName, 18), columns[1].x, y - 8, 7, true);
-        text(shortPdfText(row.color || '', 27), columns[2].x, y - 8, 7);
+        text(shortPdfText(row.profileName, 14), columns[1].x, y - 8, 7, true);
+        text(shortPdfText(row.color || '', 20), columns[2].x, y - 8, 7);
         text(row.angle, columns[3].x, y - 8, 7);
         text(`${row.qty} pzas`, columns[4].x, y - 8, 7, true);
         text(`${fmtMm(row.length)} mm`, columns[5].x, y - 8, 7, true);
         text(row.cutPos, columns[6].x, y - 8, 7, true);
         const refs = row.extraRefs ? `${row.referenceText}; +${row.extraRefs} mas` : row.referenceText;
-        text(shortPdfText(refs || '-', 50), columns[7].x, y - 8, 6);
+        text(shortPdfText(refs || '-', 30), columns[7].x, y - 8, 6);
         y -= rowH;
       });
 

@@ -486,15 +486,19 @@ def merge_pdf_results(results: list[dict], errors: list[dict] | None = None) -> 
     windows = []
     mosquito_windows = []
     file_names = []
-    document_info = {"budget": "", "client": ""}
+    budgets = []
+    clients_by_key = {}
     for result in results:
         file_name = result.get("fileName", "")
         if file_name:
             file_names.append(file_name)
-        if not document_info["budget"] and result.get("documentInfo", {}).get("budget"):
-            document_info["budget"] = result["documentInfo"]["budget"]
-        if not document_info["client"] and result.get("documentInfo", {}).get("client"):
-            document_info["client"] = result["documentInfo"]["client"]
+        budget = result.get("documentInfo", {}).get("budget", "").strip()
+        client = result.get("documentInfo", {}).get("client", "").strip()
+        if budget:
+            budgets.append(budget)
+        if client:
+            client_key = re.sub(r"\s+", " ", client).strip().casefold()
+            clients_by_key.setdefault(client_key, client)
         for collection_name, target in (("windows", windows), ("mosquitoWindows", mosquito_windows)):
             for item in result.get(collection_name, []):
                 clone = dict(item)
@@ -503,6 +507,18 @@ def merge_pdf_results(results: list[dict], errors: list[dict] | None = None) -> 
                 target.append(clone)
 
     file_label = file_names[0] if len(file_names) == 1 else f"{len(file_names)} PDFs"
+    client_values = list(clients_by_key.values())
+    warnings = []
+    if len(results) > 1 and len(client_values) > 1:
+        warnings.append({
+            "type": "client-mismatch",
+            "message": "Los PDFs cargados tienen clientes diferentes. Revisa antes de fabricar.",
+            "clients": client_values,
+        })
+    document_info = {
+        "budget": budgets[0] if len(results) == 1 and budgets else "",
+        "client": client_values[0] if len(client_values) == 1 else ("REVISAR CLIENTES" if client_values else ""),
+    }
     return {
         "fileName": file_label,
         "fileNames": file_names,
@@ -512,6 +528,7 @@ def merge_pdf_results(results: list[dict], errors: list[dict] | None = None) -> 
         "windows": windows,
         "mosquitoWindows": mosquito_windows,
         "errors": errors or [],
+        "warnings": warnings,
     }
 
 
