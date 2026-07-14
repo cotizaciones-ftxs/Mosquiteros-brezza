@@ -464,6 +464,27 @@
       border-color: var(--danger);
     }
 
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      margin-left: 6px;
+      border-radius: 6px;
+      border: 1px solid #c4dff0;
+      background: #f4fbff;
+      color: var(--accent-dark);
+      font-size: 13px;
+      font-weight: 800;
+      vertical-align: middle;
+    }
+
+    .icon-btn:hover {
+      border-color: var(--accent);
+      background: #e6f5ff;
+    }
+
     .piece-control {
       display: inline-grid;
       grid-template-columns: 28px minmax(86px, auto) 28px;
@@ -915,6 +936,7 @@
     let lastData = null;
     let pieceOverrides = {};
     let discardedCards = {};
+    let measureOverrides = {};
 
     const brefixPlasticRules = {
       '76201': { system: 'Kömmerling 76 AD', vanoW: -64, vanoH: -64, mosqWAdd: 27, mosqHAdd: 41, cutAdd: -62 },
@@ -1057,6 +1079,7 @@
         return;
       }
       pieceOverrides = {};
+      measureOverrides = {};
       render(data);
     }
 
@@ -1068,6 +1091,7 @@
         return;
       }
       pieceOverrides = {};
+      measureOverrides = {};
       render(data);
     }
 
@@ -1169,8 +1193,9 @@
         const cutQty = count * 2;
         const cutPosH = cutPositionLabel('H');
         const cutPosV = cutPositionLabel('V');
-        const pieceLabel = group.pieceTotal > 1 ? `Cuadro ${group.pieceIndex} de ${group.pieceTotal}` : 'Cuadro 1';
+        const pieceLabel = group.pieceTotal > 1 ? `Mosquitero ${group.pieceIndex} de ${group.pieceTotal}` : 'Mosquitero 1';
         const discardToken = cardToken(group);
+        const measureToken = measurementToken(group);
         const extra = calcExtra(rule, mosqW, mosqH, count);
         const extraCopy = extra ? ` | ${extra.label}: ${extra.value}` : '';
         const sourceCopy = group.sourceNote ? ` | ${group.sourceNote}` : '';
@@ -1192,7 +1217,7 @@
               <button class="copy-btn" type="button" data-copy="${escapeHtmlAttr(copyText)}">Copiar</button>
             </div>
             <div class="calc-values">
-              <span class="wide has-tip" data-tip="${escapeHtmlAttr(group.sourceTip || `Medidas tomadas de la HTF en 01TRONZADORAS DE PERFIL: hoja horizontal ${fmtMm(group.h)} mm y hoja vertical ${fmtMm(group.v)} mm.`)}">${group.directVanoW ? 'Medida marco HTF' : 'Medida hoja HTF'}<strong>H ${fmtMm(group.h)} mm / V ${fmtMm(group.v)} mm</strong></span>
+              <span class="wide has-tip" data-tip="${escapeHtmlAttr(group.sourceTip || `Medidas tomadas de la HTF en 01TRONZADORAS DE PERFIL: hoja horizontal ${fmtMm(group.h)} mm y hoja vertical ${fmtMm(group.v)} mm.`)}">${group.directVanoW ? 'Medida marco HTF' : 'Medida hoja HTF'}<button class="icon-btn" type="button" title="Editar medidas H/V" data-measure-key="${escapeHtmlAttr(key)}" data-measure-token="${escapeHtmlAttr(measureToken)}" data-measure-h="${escapeHtmlAttr(group.h)}" data-measure-v="${escapeHtmlAttr(group.v)}">&#9998;</button><strong>H ${fmtMm(group.h)} mm / V ${fmtMm(group.v)} mm</strong></span>
               <span class="wide has-tip" data-tip="${escapeHtmlAttr(group.directVanoW ? 'Vano inversora = marco - 6 soldadura - 67 - 67.' : `Vano = hoja H ${fmtMm(group.h)} ${signed(rule.vanoW)} y hoja V ${fmtMm(group.v)} ${signed(rule.vanoH)}.`)}">Vano<strong>${fmtMm(vanoW)} x ${fmtMm(vanoH)} mm</strong></span>
               <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipW)}">Perfil horizontal para fabricar <span class="cut-position">Pos ${escapeHtml(cutPosH)}</span><strong>${cutQty} pzas x ${fmtMm(cutW)} mm</strong></span>
               <span class="has-tip" data-tip="${escapeHtmlAttr(cutTipH)}">Perfil vertical para fabricar <span class="cut-position">Pos ${escapeHtml(cutPosV)}</span><strong>${cutQty} pzas x ${fmtMm(cutH)} mm</strong></span>
@@ -1294,8 +1319,8 @@
 
     function groupsForFabricationItem(item, targetCount = null, key = '') {
       const inversoraGroup = inversoraFrameGroup(item);
-      if (inversoraGroup) return [inversoraGroup];
-      return groupsForFabrication(item?.leafProfiles || [], targetCount, key);
+      if (inversoraGroup) return applyMeasureOverrides([inversoraGroup], key);
+      return applyMeasureOverrides(groupsForFabrication(item?.leafProfiles || [], targetCount, key), key);
     }
 
     function inversoraFrameGroup(item) {
@@ -1325,9 +1350,26 @@
         sourceIndex: 1,
         pieceIndex: 1,
         pieceTotal: 1,
+        frameSeries,
+        weldDiscount,
         sourceNote: 'Inversora: marco completo',
         sourceTip: `Inversora detectada. Vano ancho = marco H ${fmtMm(hFrame)} - ${weldDiscount} soldadura - ${frameSeries} - ${frameSeries}. Vano alto = marco V ${fmtMm(vFrame)} - ${weldDiscount} soldadura - ${frameSeries} - ${frameSeries}.`
       };
+    }
+
+    function applyMeasureOverrides(groups, key) {
+      return groups.map((group) => {
+        const override = measureOverrides[measureOverrideKey(key, group)];
+        if (!override) return group;
+        const next = { ...group, h: override.h, v: override.v, sourceTip: 'Medidas editadas manualmente desde la revisión.' };
+        if (Number.isFinite(group.directVanoW) || Number.isFinite(group.directVanoH)) {
+          const weldDiscount = Number.isFinite(group.weldDiscount) ? group.weldDiscount : 6;
+          const frameSeries = Number.isFinite(group.frameSeries) ? group.frameSeries : 67;
+          next.directVanoW = next.h - weldDiscount - (frameSeries * 2);
+          next.directVanoH = next.v - weldDiscount - (frameSeries * 2);
+        }
+        return next;
+      });
     }
 
     function frameLengthByOrientation(frames, orientation) {
@@ -1406,6 +1448,21 @@
       return `${group.profile}|${fmtMm(group.h)}|${fmtMm(group.v)}|${group.sourceIndex || 1}`;
     }
 
+    function measurementToken(group) {
+      return [
+        group.profile,
+        group.sourceIndex || 1,
+        group.pieceIndex || 1,
+        group.sourceNote || '',
+        group.sourceCount || 1
+      ].join('|');
+    }
+
+    function measureOverrideKey(rowKeyValue, groupOrToken) {
+      const token = typeof groupOrToken === 'string' ? groupOrToken : measurementToken(groupOrToken);
+      return `${rowKeyValue}::${token}`;
+    }
+
     function applyWindowPieceCount(groups, targetCount) {
       if (!Number.isFinite(targetCount) || targetCount <= 0) return groups;
       let remaining = targetCount;
@@ -1462,7 +1519,7 @@
           const cutPosH = cutPositionLabel('H');
           const cutPosV = cutPositionLabel('V');
           const extra = calcExtra(rule, mosqW, mosqH, count);
-          const pieceLabel = group.pieceTotal > 1 ? `Cuadro ${group.pieceIndex} de ${group.pieceTotal}` : 'Cuadro 1';
+          const pieceLabel = group.pieceTotal > 1 ? `Mosquitero ${group.pieceIndex} de ${group.pieceTotal}` : 'Mosquitero 1';
           rows.push({
             windowIndex: item.index,
             nomenclature: item.nomenclature || '',
@@ -1509,6 +1566,19 @@
       const old = button.textContent;
       button.textContent = 'Copiado';
       setTimeout(() => button.textContent = old, 900);
+    }
+
+    function editMeasureFromButton(button) {
+      const key = button.dataset.measureKey || '';
+      const token = button.dataset.measureToken || '';
+      const currentH = parseLocaleNumber(button.dataset.measureH);
+      const currentV = parseLocaleNumber(button.dataset.measureV);
+      const nextH = parseLocaleNumber(window.prompt('Medida H en mm', Number.isFinite(currentH) ? fmtMm(currentH) : ''));
+      if (!Number.isFinite(nextH) || nextH <= 0) return;
+      const nextV = parseLocaleNumber(window.prompt('Medida V en mm', Number.isFinite(currentV) ? fmtMm(currentV) : ''));
+      if (!Number.isFinite(nextV) || nextV <= 0) return;
+      measureOverrides[measureOverrideKey(key, token)] = { h: nextH, v: nextV };
+      render(lastData);
     }
 
     function downloadExcel() {
@@ -1966,7 +2036,7 @@
       rows.forEach((row, index) => {
         const h = 118;
         rect(margin, y - h + 8, pageW - margin * 2, h);
-        text(`Mosquitero ${row.workOrderNumber} de ${row.workOrderTotal} | ${row.nomenclature || 'Sin nomenclatura'} | ${row.pieceLabel}${row.sourceNote ? ` | ${row.sourceNote}` : ''}`, margin + 8, y - 8, 11, true);
+        text(`Mosquitero ${row.workOrderNumber} de ${row.workOrderTotal} | ${row.nomenclature || 'Sin nomenclatura'} | ${row.pieceLabel}`, margin + 8, y - 8, 11, true);
         text(`${row.profile} | ${row.system} | ${row.closureType} | ${row.meshType} | Color: ${row.color}`, margin + 8, y - 24, 8);
 
         text(`${row.sourceNote ? 'Marco HTF' : 'Hoja HTF'}: H ${fmtMm(row.leafH)} mm / V ${fmtMm(row.leafV)} mm`, margin + 8, y - 42, 8);
@@ -2297,6 +2367,11 @@
     $('downloadCutListBtn').addEventListener('click', downloadCutListPdf);
     $('downloadProductionCutListBtn').addEventListener('click', downloadProductionCutListPdf);
     $('rowsBody').addEventListener('click', (event) => {
+      const measureButton = event.target.closest('[data-measure-key]');
+      if (measureButton) {
+        editMeasureFromButton(measureButton);
+        return;
+      }
       const pieceButton = event.target.closest('[data-piece-key]');
       if (pieceButton) {
         const key = pieceButton.dataset.pieceKey;
