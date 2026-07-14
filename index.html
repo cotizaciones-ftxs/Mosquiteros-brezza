@@ -1878,6 +1878,13 @@
         commands.push(`${color} rg`);
         commands.push(`BT /${bold ? 'F2' : 'F1'} ${size} Tf ${x} ${y} Td (${pdfEscape(pdfText(value))}) Tj ET`);
       };
+      const isMiterCut = selectedMeshType === 'brefix-45';
+      const miterEdge = (x, y, h, direction = 1) => {
+        const dx = Math.min(16, h * .65);
+        const x1 = direction > 0 ? x : x - dx;
+        const x2 = direction > 0 ? x + dx : x;
+        line(x1, y, x2, y + h);
+      };
       const info = lastData?.documentInfo || {};
       const totalPieces = allRows.reduce((sum, row) => sum + row.cutCount, 0);
       const totalWaste = allRows.reduce((sum, row) => sum + row.waste, 0);
@@ -1916,7 +1923,14 @@
             const w = Math.max(5, (cut.length / row.stockLength) * barW);
             const fill = cutIndex % 2 === 0 ? '0.86 0.93 0.98' : '0.92 0.96 0.99';
             fillRect(x, barY, w, barH, fill);
-            rect(x, barY, w, barH);
+            if (isMiterCut) {
+              line(x, barY, x + w, barY);
+              line(x, barY + barH, x + w, barY + barH);
+              miterEdge(x, barY, barH, 1);
+              miterEdge(x + w, barY, barH, -1);
+            } else {
+              rect(x, barY, w, barH);
+            }
             if (w > 34) text(`${fmtMm(cut.length)} ${cut.use}`, x + 3, barY + 9, 6, true);
             x += w;
           }
@@ -1925,7 +1939,14 @@
           const wasteW = Math.max(0, barX + barW - x);
           if (wasteW > 1) {
             fillRect(x, barY, wasteW, barH, '0.93 0.93 0.93');
-            rect(x, barY, wasteW, barH);
+            if (isMiterCut) {
+              miterEdge(x, barY, barH, 1);
+              line(x, barY, x + wasteW, barY);
+              line(x, barY + barH, x + wasteW, barY + barH);
+              line(x + wasteW, barY, x + wasteW, barY + barH);
+            } else {
+              rect(x, barY, wasteW, barH);
+            }
             if (wasteW > 32) text('sobrante', x + 3, barY + 9, 6);
           }
         }
