@@ -124,6 +124,77 @@
       padding: 16px;
     }
 
+    .home-panel {
+      min-height: 420px;
+      display: grid;
+      align-content: center;
+      gap: 18px;
+    }
+
+    .home-title {
+      margin: 0;
+      font-size: clamp(24px, 3vw, 36px);
+      letter-spacing: 0;
+    }
+
+    .home-copy {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .module-card {
+      min-height: 180px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdff;
+      padding: 18px;
+      text-align: left;
+      display: grid;
+      gap: 10px;
+      align-content: start;
+      transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+    }
+
+    .module-card:hover {
+      transform: translateY(-1px);
+      border-color: var(--accent);
+      box-shadow: 0 14px 30px rgba(21, 35, 49, .10);
+    }
+
+    .module-card.active-choice {
+      background: var(--soft);
+      border-color: var(--accent);
+    }
+
+    .module-card strong {
+      font-size: 22px;
+    }
+
+    .module-card span {
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .module-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .module-title {
+      margin: 0;
+      font-size: 18px;
+      color: var(--accent-dark);
+    }
+
     .review-bar {
       position: sticky;
       top: 0;
@@ -746,6 +817,7 @@
       .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .type-grid { grid-template-columns: 1fr; }
       .finish-grid { grid-template-columns: 1fr; }
+      .module-grid { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 620px) {
@@ -767,13 +839,39 @@
       </div>
       <div class="brand-copy">
         <p class="brand-name">Brezza Screens</p>
-        <h1>Extractor HTF Mosquiteros</h1>
-        <p class="subhead">Primera lectura por texto y estructura: notas de mosquitero, nomenclatura, medida final y perfiles de hoja</p>
+        <h1>HTFM Mosquiteros</h1>
+        <p class="subhead">Selecciona el tipo de mosquitero y genera hojas de trabajo de fabricaciÃ³n</p>
       </div>
     </div>
   </header>
 
   <main>
+    <section class="panel home-panel" id="homePanel">
+      <div>
+        <h2 class="home-title">Â¿QuÃ© HTFM quieres generar?</h2>
+        <p class="home-copy">Elige el modelo de mosquitero para abrir sus reglas, documentos y listas de corte.</p>
+      </div>
+      <div class="module-grid">
+        <button class="module-card active-choice" type="button" data-open-module="fixed">
+          <strong>HTFM Mosquiteros Fijos</strong>
+          <span>Brefix con escuadra plÃ¡stica, Brefix con cortes a 45 y Cuprum. Usa la app que ya terminamos.</span>
+          <span class="tag blue">Abrir mÃ³dulo</span>
+        </button>
+        <button class="module-card" type="button" data-open-module="esperto">
+          <strong>HTFM Mosquiteros Esperto</strong>
+          <span>Nuevo modelo. Queda preparado para conectar el Excel y las reglas de Esperto.</span>
+          <span class="tag gold">En preparaciÃ³n</span>
+        </button>
+      </div>
+      <div class="status" id="homeStatus">Por ahora Esperto queda como entrada preparada; el cÃ¡lculo se activarÃ¡ cuando carguemos sus reglas.</div>
+    </section>
+
+    <div id="fixedModule" hidden>
+      <div class="module-topbar">
+        <h2 class="module-title">HTFM Mosquiteros Fijos</h2>
+        <button class="btn secondary" id="backHomeBtn" type="button">Cambiar mÃ³dulo</button>
+      </div>
+
     <div class="review-bar">
       <section class="panel">
         <div class="upload">
@@ -896,6 +994,7 @@
         </button>
       </div>
     </section>
+    </div>
   </main>
 
   <script>
@@ -1024,6 +1123,27 @@
       customMeshColor = value || '';
       localStorage.setItem('brezzaCustomMeshColor', customMeshColor);
       if (lastData) render(lastData);
+    }
+
+    function showHome() {
+      $('homePanel').hidden = false;
+      $('fixedModule').hidden = true;
+      history.replaceState(null, '', location.pathname);
+    }
+
+    function openFixedModule() {
+      $('homePanel').hidden = true;
+      $('fixedModule').hidden = false;
+      history.replaceState(null, '', '#fijos');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showEspertoPending() {
+      $('homeStatus').textContent = 'Esperto ya tiene su entrada lista. Falta cargar sus perfiles, reglas y fÃ³rmulas del Excel para activar el cÃ¡lculo.';
+      $('homeStatus').style.color = 'var(--warn)';
+      document.querySelectorAll('[data-open-module]').forEach((button) => {
+        button.classList.toggle('active-choice', button.dataset.openModule === 'esperto');
+      });
     }
 
     async function requestJson(url, options) {
@@ -2467,9 +2587,21 @@
     });
     $('meshColorSelect').addEventListener('change', (event) => setMeshColor(event.target.value));
     $('meshCustomColor').addEventListener('input', (event) => setCustomMeshColor(event.target.value));
+    document.querySelectorAll('[data-open-module]').forEach((button) => {
+      button.addEventListener('click', () => {
+        if (button.dataset.openModule === 'fixed') {
+          document.querySelectorAll('[data-open-module]').forEach((item) => item.classList.toggle('active-choice', item === button));
+          openFixedModule();
+        } else {
+          showEspertoPending();
+        }
+      });
+    });
+    $('backHomeBtn').addEventListener('click', showHome);
     setMeshType(selectedMeshType);
     setMeshColor(selectedMeshColor);
     loadProfiles();
+    if (location.hash === '#fijos') openFixedModule();
   </script>
 </body>
 </html>
