@@ -1640,7 +1640,7 @@
             references: new Set(),
           };
           current.qty += cut.qty;
-          current.references.add([row.sourceFile, row.nomenclature || 'Sin nomenclatura', row.pieceLabel].filter(Boolean).join(' - '));
+          current.references.add([row.nomenclature || 'Sin nomenclatura', row.pieceLabel].filter(Boolean).join(' - '));
           grouped.set(key, current);
         });
       });
@@ -1670,7 +1670,7 @@
               system: row.system,
               use: cut.use,
               length: cut.length,
-              reference: [row.sourceFile, row.nomenclature || 'Sin nomenclatura', row.pieceLabel].filter(Boolean).join(' - '),
+              reference: [row.nomenclature || 'Sin nomenclatura', row.pieceLabel].filter(Boolean).join(' - '),
             });
           }
         });
@@ -1761,7 +1761,7 @@
       const pageW = 595;
       const pageH = 842;
       const margin = 28;
-      const pageRows = 6;
+      const pageRows = 5;
       const chunks = [];
       for (let i = 0; i < rows.length; i += pageRows) chunks.push(rows.slice(i, i + pageRows));
       const objects = [];
@@ -1964,18 +1964,17 @@
 
       let y = pageH - 166;
       rows.forEach((row, index) => {
-        const h = 98;
+        const h = 118;
         rect(margin, y - h + 8, pageW - margin * 2, h);
         text(`Mosquitero ${row.workOrderNumber} de ${row.workOrderTotal} | ${row.nomenclature || 'Sin nomenclatura'} | ${row.pieceLabel}${row.sourceNote ? ` | ${row.sourceNote}` : ''}`, margin + 8, y - 8, 11, true);
-        const sourceLabel = row.sourceFile ? ` | Archivo: ${shortPdfText(row.sourceFile, 34)}` : '';
-        text(`${row.profile} | ${row.system} | ${row.closureType} | ${row.meshType} | Color: ${row.color}${sourceLabel}`, margin + 8, y - 24, 8);
+        text(`${row.profile} | ${row.system} | ${row.closureType} | ${row.meshType} | Color: ${row.color}`, margin + 8, y - 24, 8);
 
         text(`${row.sourceNote ? 'Marco HTF' : 'Hoja HTF'}: H ${fmtMm(row.leafH)} mm / V ${fmtMm(row.leafV)} mm`, margin + 8, y - 42, 8);
         text(`Vano: ${fmtMm(row.vanoW)} x ${fmtMm(row.vanoH)} mm`, margin + 8, y - 58, 8);
         text(`Medida final: ${fmtMm(row.mosqW)} x ${fmtMm(row.mosqH)} mm`, margin + 220, y - 58, 8);
         text(`Perfil horizontal: ${row.cutQty} pzas x ${fmtMm(row.cutW)} mm  Pos ${row.cutPosH}`, margin + 8, y - 76, 8, true);
         text(`Perfil vertical: ${row.cutQty} pzas x ${fmtMm(row.cutH)} mm  Pos ${row.cutPosV}`, margin + 8, y - 92, 8, true);
-        if (row.extraLabel) text(`${row.extraLabel}: ${row.extraValue}`, margin + 330, y - 92, 8);
+        if (row.extraLabel) text(`${row.extraLabel}: ${row.extraValue}`, margin + 8, y - 108, 8, true);
         y -= h + 8;
       });
       return commands.join('\n');
