@@ -2068,6 +2068,7 @@
       };
       const info = lastData?.documentInfo || {};
       const headerY = pageH - margin - 22;
+      const summaryX = margin + 350;
       fillRect(margin, pageH - 146, pageW - margin * 2, 120, '0.04 0.32 0.52');
       commands.push('1 1 1 rg');
       text('HTF MOSQUITEROS BREZZA', margin + 12, headerY, 15, true);
@@ -2075,7 +2076,9 @@
       text(`Archivo: ${lastData?.fileName || '-'}`, margin + 12, headerY - 33, 8);
       text(`Tipo: ${meshTypeLabels[selectedMeshType] || selectedMeshType}`, margin + 12, headerY - 49, 10, true);
       text(`Color: ${shortPdfText(selectedColorLabel(), 58)}`, margin + 12, headerY - 64, 10, true);
-      text(`Total mosquiteros: ${rows[0]?.workOrderTotal || 0}    Fecha: ${new Date().toLocaleDateString('es-MX')}    Pagina ${page} de ${totalPages}`, margin + 12, headerY - 80, 8);
+      text(`Total mosquiteros: ${rows[0]?.workOrderTotal || 0}`, summaryX, headerY - 46, 8, true);
+      text(`Fecha: ${new Date().toLocaleDateString('es-MX')}`, summaryX, headerY - 61, 8);
+      text(`Pagina ${page} de ${totalPages}`, summaryX, headerY - 76, 8);
       if (hasLogo) commands.push(`q 48 0 0 48 ${pageW - margin - 62} ${pageH - 96} cm /Logo Do Q`);
       commands.push('0 0 0 rg');
 
@@ -2120,6 +2123,7 @@
       const totalWaste = allRows.reduce((sum, row) => sum + row.waste, 0);
       const stockLength = stockLengthForMeshType();
       const headerY = pageH - margin - 22;
+      const summaryX = margin + 350;
       fillRect(margin, pageH - 146, pageW - margin * 2, 120, '0.04 0.32 0.52');
       commands.push('1 1 1 rg');
       text('OPTIMIZACION DE CORTE MOSQUITEROS', margin + 12, headerY, 14, true, '1 1 1');
@@ -2127,7 +2131,10 @@
       text(`Archivo: ${lastData?.fileName || '-'}`, margin + 12, headerY - 33, 8, false, '1 1 1');
       text(`${stockProfileName()} - barra ${stockLength} mm | Tipo: ${meshTypeLabels[selectedMeshType] || selectedMeshType}`, margin + 12, headerY - 49, 10, true, '1 1 1');
       text(`Color: ${shortPdfText(selectedColorLabel(), 58)}`, margin + 12, headerY - 64, 10, true, '1 1 1');
-      text(`Barras: ${allRows.length}    Piezas: ${totalPieces}    Sobrante total: ${fmtMm(totalWaste)} mm    Pagina ${page} de ${totalPages}`, margin + 12, headerY - 80, 8, false, '1 1 1');
+      text(`Barras: ${allRows.length}`, summaryX, headerY - 44, 8, true, '1 1 1');
+      text(`Piezas: ${totalPieces}`, summaryX, headerY - 58, 8, false, '1 1 1');
+      text(`Sobrante: ${fmtMm(totalWaste)} mm`, summaryX, headerY - 72, 8, false, '1 1 1');
+      text(`Pagina ${page} de ${totalPages}`, summaryX, headerY - 86, 8, false, '1 1 1');
       if (hasLogo) commands.push(`q 48 0 0 48 ${pageW - margin - 62} ${pageH - 96} cm /Logo Do Q`);
       commands.push('0 0 0 rg');
 
@@ -2195,13 +2202,16 @@
       const totalQty = allRows.reduce((sum, row) => sum + row.qty, 0);
       const totalMm = allRows.reduce((sum, row) => sum + row.totalMm, 0);
       const headerY = pageH - margin - 22;
+      const summaryX = margin + 350;
       fillRect(margin, pageH - 146, pageW - margin * 2, 120, '0.04 0.32 0.52');
       text('LISTA DE CORTES MOSQUITEROS', margin + 12, headerY, 15, true, '1 1 1');
       text(`Presupuesto no.: ${info.budget || ''}    Cliente: ${shortPdfText(info.client || '-', 42)}`, margin + 12, headerY - 17, 9, true, '1 1 1');
       text(`Archivo: ${lastData?.fileName || '-'}`, margin + 12, headerY - 33, 8, false, '1 1 1');
       text(`${stockProfileName()} | Tipo: ${meshTypeLabels[selectedMeshType] || selectedMeshType}`, margin + 12, headerY - 49, 10, true, '1 1 1');
       text(`Color: ${shortPdfText(selectedColorLabel(), 58)}`, margin + 12, headerY - 64, 10, true, '1 1 1');
-      text(`Piezas: ${totalQty}    Longitud total: ${fmtMm(totalMm)} mm    Pagina ${page} de ${totalPages}`, margin + 12, headerY - 80, 8, false, '1 1 1');
+      text(`Piezas: ${totalQty}`, summaryX, headerY - 46, 8, true, '1 1 1');
+      text(`Longitud total: ${fmtMm(totalMm)} mm`, summaryX, headerY - 61, 8, false, '1 1 1');
+      text(`Pagina ${page} de ${totalPages}`, summaryX, headerY - 76, 8, false, '1 1 1');
       if (hasLogo) commands.push(`q 48 0 0 48 ${pageW - margin - 62} ${pageH - 96} cm /Logo Do Q`);
       commands.push('0 0 0 rg');
 
