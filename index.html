@@ -241,6 +241,40 @@
       color: #063a63;
     }
 
+    .finish-grid {
+      display: grid;
+      grid-template-columns: minmax(220px, 360px) minmax(180px, 1fr);
+      gap: 10px;
+      align-items: end;
+    }
+
+    .finish-field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .finish-field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .finish-field select,
+    .finish-field input {
+      min-height: 40px;
+      border: 1px solid #b7dcef;
+      border-radius: 6px;
+      color: var(--ink);
+      background: #fbfdff;
+      padding: 8px 10px;
+    }
+
+    .finish-field input[hidden] {
+      display: none;
+    }
+
     .icon {
       width: 17px;
       height: 17px;
@@ -671,6 +705,7 @@
       .upload { grid-template-columns: 1fr; flex-direction: column; align-items: stretch; }
       .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .type-grid { grid-template-columns: 1fr; }
+      .finish-grid { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 620px) {
@@ -746,6 +781,32 @@
           </button>
         </div>
       </section>
+
+      <section class="panel">
+        <div class="finish-grid">
+          <div class="finish-field">
+            <label for="meshColorSelect">Color de mosquitero</label>
+            <select id="meshColorSelect">
+              <option value="negro">Negro</option>
+              <option value="blanco">Blanco</option>
+              <option value="marfil">Marfil</option>
+              <option value="gris-plata">Gris plata</option>
+              <option value="gris-oxford">Gris oxford</option>
+              <option value="dark-gray">Dark gray</option>
+              <option value="gris-europa">Gris europa</option>
+              <option value="champagne">Champagne</option>
+              <option value="chocolate">Chocolate</option>
+              <option value="embero">Embero</option>
+              <option value="nogal">Nogal</option>
+              <option value="foliado-especial">Foliado especial</option>
+            </select>
+          </div>
+          <div class="finish-field">
+            <label for="meshCustomColor">Color especial</label>
+            <input id="meshCustomColor" type="text" placeholder="Ej. Ceylon" hidden>
+          </div>
+        </div>
+      </section>
     </div>
 
     <section class="panel catalog-panel collapsed" id="catalogPanel">
@@ -806,6 +867,20 @@
       'brefix-45': 'Brefix con cortes a 45',
       cuprum: 'Cuprum'
     };
+    const meshColorLabels = {
+      negro: 'Negro',
+      blanco: 'Blanco',
+      marfil: 'Marfil',
+      'gris-plata': 'Gris plata',
+      'gris-oxford': 'Gris oxford',
+      'dark-gray': 'Dark gray',
+      'gris-europa': 'Gris europa',
+      champagne: 'Champagne',
+      chocolate: 'Chocolate',
+      embero: 'Embero',
+      nogal: 'Nogal',
+      'foliado-especial': 'Foliado especial'
+    };
     const catalogSystems = ['Kömmerling 76 AD', 'Premiline 58', 'Premiline 80', 'Eurofine 58', 'Eurofutur'];
     const systemClosureTypes = {
       'Kömmerling 76 AD': 'Presión',
@@ -816,6 +891,8 @@
     };
     const slidingProfiles = new Set(['6040', '6041', '2173', '2174']);
     let selectedMeshType = localStorage.getItem('brezzaMeshType') || 'brefix-plastica';
+    let selectedMeshColor = localStorage.getItem('brezzaMeshColor') || 'blanco';
+    let customMeshColor = localStorage.getItem('brezzaCustomMeshColor') || '';
     let lastData = null;
     let pieceOverrides = {};
     let discardedCards = {};
@@ -876,6 +953,35 @@
       document.querySelectorAll('[data-mesh-type]').forEach((button) => {
         button.classList.toggle('active', button.dataset.meshType === type);
       });
+      if (lastData) render(lastData);
+    }
+
+    function selectedColorLabel() {
+      if (selectedMeshColor === 'foliado-especial') {
+        const custom = customMeshColor.trim();
+        return custom ? `Foliado especial - ${custom}` : 'Foliado especial';
+      }
+      return meshColorLabels[selectedMeshColor] || selectedMeshColor || '-';
+    }
+
+    function setMeshColor(color) {
+      selectedMeshColor = color || 'blanco';
+      localStorage.setItem('brezzaMeshColor', selectedMeshColor);
+      const select = $('meshColorSelect');
+      const customInput = $('meshCustomColor');
+      if (select) select.value = selectedMeshColor;
+      if (customInput) {
+        const isCustom = selectedMeshColor === 'foliado-especial';
+        customInput.hidden = !isCustom;
+        customInput.value = customMeshColor;
+        if (isCustom) customInput.focus();
+      }
+      if (lastData) render(lastData);
+    }
+
+    function setCustomMeshColor(value) {
+      customMeshColor = value || '';
+      localStorage.setItem('brezzaCustomMeshColor', customMeshColor);
       if (lastData) render(lastData);
     }
 
@@ -1266,6 +1372,7 @@
             nomenclature: item.nomenclature || '',
             pages: (item.pages || []).join(', '),
             meshType: meshTypeLabels[selectedMeshType] || selectedMeshType,
+            color: selectedColorLabel(),
             profile: group.profile,
             system: rule.system,
             closureType: closureType(rule.system),
@@ -1311,11 +1418,12 @@
         return;
       }
       const headers = ['Nomenclatura', 'Perfil hoja', 'Sistema', 'Tipo de cierre', 'Cuadros detectados', 'Hoja H', 'Hoja V', 'Vano ancho', 'Vano alto', 'Perfil horizontal para fabricar', 'Pzas horizontal', 'Perfil vertical para fabricar', 'Pzas vertical', 'Medida final ancho', 'Medida final alto', 'Extra', 'Extra valor'];
-      const fullHeaders = ['Tipo de mosquitero', ...headers];
+      const fullHeaders = ['Tipo de mosquitero', 'Color', ...headers];
       const htmlRows = [
         `<tr>${fullHeaders.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr>`,
         ...rows.map((row) => `<tr>
           <td>${escapeHtml(row.meshType)}</td>
+          <td>${escapeHtml(row.color)}</td>
           <td>${escapeHtml(row.nomenclature)}</td>
           <td>${escapeHtml(row.profile)}</td>
           <td>${escapeHtml(row.system)}</td>
@@ -1418,7 +1526,7 @@
           const current = grouped.get(key) || {
             profileName: stockProfileName(),
             meshType: meshTypeLabels[selectedMeshType] || selectedMeshType,
-            color: '',
+            color: selectedColorLabel(),
             angle: angleLabelForMeshType(),
             orientation: cut.orientation,
             code: cut.code,
@@ -1736,6 +1844,7 @@
       text(`Presupuesto no.: ${info.budget || '-'}    Cliente: ${info.client || '-'}`, margin + 12, headerY - 17, 9, true);
       text(`Archivo: ${lastData?.fileName || '-'}`, margin + 12, headerY - 33, 8);
       text(`Tipo: ${meshTypeLabels[selectedMeshType] || selectedMeshType}`, margin + 12, headerY - 49, 10, true);
+      text(`Color: ${selectedColorLabel()}`, margin + 12, headerY - 64, 10, true);
       text(`Total mosquiteros: ${rows[0]?.workOrderTotal || 0}    Fecha: ${new Date().toLocaleDateString('es-MX')}    Pagina ${page} de ${totalPages}`, pageW - 340, headerY - 49, 8);
       if (hasLogo) commands.push(`q 54 0 0 54 ${pageW - margin - 68} ${pageH - 96} cm /Logo Do Q`);
       commands.push('0 0 0 rg');
@@ -1745,7 +1854,7 @@
         const h = 72;
         rect(margin, y - h + 8, pageW - margin * 2, h);
         text(`Mosquitero ${row.workOrderNumber} de ${row.workOrderTotal} | ${row.nomenclature || 'Sin nomenclatura'} | ${row.pieceLabel}`, margin + 8, y - 8, 11, true);
-        text(`${row.profile} | ${row.system} | ${row.closureType} | ${row.meshType}`, margin + 8, y - 24, 8);
+        text(`${row.profile} | ${row.system} | ${row.closureType} | ${row.meshType} | Color: ${row.color}`, margin + 8, y - 24, 8);
 
         text(`Hoja HTF: H ${fmtMm(row.leafH)} mm / V ${fmtMm(row.leafV)} mm`, margin + 8, y - 42, 8);
         text(`Vano: ${fmtMm(row.vanoW)} x ${fmtMm(row.vanoH)} mm`, margin + 220, y - 42, 8);
@@ -1780,6 +1889,7 @@
       text(`Presupuesto no.: ${info.budget || '-'}    Cliente: ${info.client || '-'}`, margin + 12, headerY - 17, 9, true, '1 1 1');
       text(`Archivo: ${lastData?.fileName || '-'}`, margin + 12, headerY - 33, 8, false, '1 1 1');
       text(`${stockProfileName()} - barra ${stockLength} mm | Tipo: ${meshTypeLabels[selectedMeshType] || selectedMeshType}`, margin + 12, headerY - 49, 10, true, '1 1 1');
+      text(`Color: ${selectedColorLabel()}`, margin + 12, headerY - 64, 10, true, '1 1 1');
       text(`Barras: ${allRows.length}    Piezas: ${totalPieces}    Sobrante total: ${fmtMm(totalWaste)} mm    Pagina ${page} de ${totalPages}`, pageW - 410, headerY - 49, 8, false, '1 1 1');
       if (hasLogo) commands.push(`q 54 0 0 54 ${pageW - margin - 68} ${pageH - 96} cm /Logo Do Q`);
       commands.push('0 0 0 rg');
@@ -1848,12 +1958,13 @@
       text(`Presupuesto no.: ${info.budget || '-'}    Cliente: ${info.client || '-'}`, margin + 12, headerY - 17, 9, true, '1 1 1');
       text(`Archivo: ${lastData?.fileName || '-'}`, margin + 12, headerY - 33, 8, false, '1 1 1');
       text(`${stockProfileName()} | Tipo: ${meshTypeLabels[selectedMeshType] || selectedMeshType}`, margin + 12, headerY - 49, 10, true, '1 1 1');
+      text(`Color: ${selectedColorLabel()}`, margin + 12, headerY - 64, 10, true, '1 1 1');
       text(`Piezas: ${totalQty}    Longitud total: ${fmtMm(totalMm)} mm    Pagina ${page} de ${totalPages}`, pageW - 330, headerY - 49, 8, false, '1 1 1');
       if (hasLogo) commands.push(`q 54 0 0 54 ${pageW - margin - 68} ${pageH - 96} cm /Logo Do Q`);
       commands.push('0 0 0 rg');
 
       let y = pageH - 135;
-      text('Documento para produccion: cortar todos los perfiles antes de armar mosquiteros. La columna color queda preparada para seleccionar acabado.', margin, y, 8);
+      text('Documento para produccion: cortar todos los perfiles antes de armar mosquiteros.', margin, y, 8);
       y -= 20;
 
       const columns = [
@@ -2083,7 +2194,10 @@
     document.querySelectorAll('[data-mesh-type]').forEach((button) => {
       button.addEventListener('click', () => setMeshType(button.dataset.meshType));
     });
+    $('meshColorSelect').addEventListener('change', (event) => setMeshColor(event.target.value));
+    $('meshCustomColor').addEventListener('input', (event) => setCustomMeshColor(event.target.value));
     setMeshType(selectedMeshType);
+    setMeshColor(selectedMeshColor);
     loadProfiles();
   </script>
 </body>
