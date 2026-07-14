@@ -1864,8 +1864,7 @@
         { title: 'Uso', x: margin + 260, w: 70 },
         { title: 'Cantidad', x: margin + 333, w: 54 },
         { title: 'Longitud', x: margin + 390, w: 70 },
-        { title: 'Total mm', x: margin + 463, w: 70 },
-        { title: 'Referencia', x: margin + 536, w: pageW - margin * 2 - 536 + margin },
+        { title: 'Referencia', x: margin + 463, w: pageW - margin * 2 - 463 + margin },
       ];
       const tableX = margin;
       const tableW = pageW - margin * 2;
@@ -1885,9 +1884,8 @@
         text(`${row.orientation} (${row.code})`, columns[4].x, y - 8, 7);
         text(`${row.qty} pzas`, columns[5].x, y - 8, 7, true);
         text(`${fmtMm(row.length)} mm`, columns[6].x, y - 8, 7, true);
-        text(`${fmtMm(row.totalMm)} mm`, columns[7].x, y - 8, 7);
         const refs = row.extraRefs ? `${row.referenceText}; +${row.extraRefs} mas` : row.referenceText;
-        text(shortPdfText(refs || '-', 62), columns[8].x, y - 8, 6);
+        text(shortPdfText(refs || '-', 78), columns[7].x, y - 8, 6);
         y -= rowH;
       });
 
