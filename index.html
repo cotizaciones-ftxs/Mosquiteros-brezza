@@ -1125,11 +1125,6 @@
       const piecesCell = detectedPieces ? pieceControlHtml(key, pieces, maxPieces) : '<span class="tag gray">-</span>';
       const needsSlidingReview = isLargeSlidingWindow(profiles, maxPieces);
       const hasInversoraReview = Boolean(inversoraFrameGroup(item));
-      const reviewTags = [
-        needsSlidingReview ? '<span class="tag red">Revisar: mas de 3 hojas</span>' : '',
-        hasInversoraReview ? '<span class="tag red">Inversora: marco completo</span>' : ''
-      ].filter(Boolean).join(' ');
-      const reviewTag = reviewTags ? `<div class="status">${reviewTags}</div>` : '';
       const rowAlert = needsSlidingReview || hasInversoraReview;
       return `
         <tr class="${rowAlert ? 'row-alert' : ''}">
@@ -1138,7 +1133,6 @@
             <span class="tag blue">${escapeHtml(item.nomenclature || 'Sin nomenclatura')}</span>
             <div class="status">Páginas: ${(item.pages || []).join(', ')}</div>
             ${sourceFileHtml(item)}
-            ${reviewTag}
           </td>
           <td>
             <div class="notes">
@@ -1174,6 +1168,9 @@
       }
 
       const item = Array.isArray(itemOrProfiles) ? { leafProfiles: itemOrProfiles } : itemOrProfiles;
+      const slidingReviewNote = !Array.isArray(itemOrProfiles) && isLargeSlidingWindow(item?.leafProfiles || [], maxWindowPieceCount(item))
+        ? 'Revisar: mas de 3 hojas'
+        : '';
       const groups = groupsForFabricationItem(item, targetCount, key);
       const cards = groups.map((group) => {
         const rule = rules[group.profile];
@@ -1212,6 +1209,7 @@
               <span>${escapeHtml(group.profile)}</span>
               <span class="tag green">${escapeHtml(rule.system)}</span>
               <span class="tag blue">${escapeHtml(pieceLabel)}</span>
+              ${slidingReviewNote ? `<span class="tag red">${escapeHtml(slidingReviewNote)}</span>` : ''}
               ${group.sourceNote ? `<span class="tag red">${escapeHtml(group.sourceNote)}</span>` : ''}
               <button class="copy-btn danger" type="button" data-discard-key="${escapeHtmlAttr(key)}" data-discard-token="${escapeHtmlAttr(discardToken)}">Descartar</button>
               <button class="copy-btn" type="button" data-copy="${escapeHtmlAttr(copyText)}">Copiar</button>
