@@ -25,6 +25,10 @@
 
     * { box-sizing: border-box; }
 
+    [hidden] {
+      display: none !important;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
@@ -905,7 +909,7 @@
       <div class="brand-copy">
         <p class="brand-name">Brezza Screens</p>
         <h1>HTFM Mosquiteros</h1>
-        <p class="subhead">Selecciona el tipo de mosquitero y genera hojas de trabajo de fabricaciÃ³n</p>
+        <p class="subhead">Selecciona el tipo de mosquitero y genera hojas de trabajo de fabricacion</p>
       </div>
     </div>
   </header>
@@ -913,28 +917,28 @@
   <main>
     <section class="panel home-panel" id="homePanel">
       <div>
-        <h2 class="home-title">Â¿QuÃ© HTFM quieres generar?</h2>
+        <h2 class="home-title">Que HTFM quieres generar?</h2>
         <p class="home-copy">Elige el modelo de mosquitero para abrir sus reglas, documentos y listas de corte.</p>
       </div>
       <div class="module-grid">
         <button class="module-card active-choice" type="button" data-open-module="fixed">
           <strong>HTFM Mosquiteros Fijos</strong>
-          <span>Brefix con escuadra plÃ¡stica, Brefix con cortes a 45 y Cuprum. Usa la app que ya terminamos.</span>
-          <span class="tag blue">Abrir mÃ³dulo</span>
+          <span>Brefix con escuadra plastica, Brefix con cortes a 45 y Cuprum. Usa la app que ya terminamos.</span>
+          <span class="tag blue">Abrir modulo</span>
         </button>
         <button class="module-card" type="button" data-open-module="esperto">
           <strong>HTFM Mosquiteros Esperto</strong>
           <span>Nuevo modelo basado en el Excel HTFM Esperto. Captura los datos verdes y genera una hoja estilo Brezza.</span>
-          <span class="tag blue">Abrir mÃ³dulo</span>
+          <span class="tag blue">Abrir modulo</span>
         </button>
       </div>
-      <div class="status" id="homeStatus">Selecciona un mÃ³dulo para comenzar.</div>
+      <div class="status" id="homeStatus">Selecciona un modulo para comenzar.</div>
     </section>
 
     <div id="fixedModule" hidden>
       <div class="module-topbar">
         <h2 class="module-title">HTFM Mosquiteros Fijos</h2>
-        <button class="btn secondary" id="backHomeBtn" type="button">Cambiar mÃ³dulo</button>
+        <button class="btn secondary" id="backHomeBtn" type="button">Cambiar modulo</button>
       </div>
 
     <div class="review-bar">
@@ -1064,7 +1068,7 @@
     <div id="espertoModule" hidden>
       <div class="module-topbar">
         <h2 class="module-title">HTFM Mosquiteros Esperto</h2>
-        <button class="btn secondary" id="backHomeEspertoBtn" type="button">Cambiar mÃ³dulo</button>
+        <button class="btn secondary" id="backHomeEspertoBtn" type="button">Cambiar modulo</button>
       </div>
 
       <section class="panel">
@@ -1096,10 +1100,10 @@
           <div class="form-field">
             <label for="espertoMode">Tipo Esperto</label>
             <select id="espertoMode">
-              <option value="auto">AutomÃ¡tico por alerta</option>
-              <option value="simple">PlissÃ¨ 8LF Simple version</option>
-              <option value="standard">PlissÃ¨ singola - Estandar</option>
-              <option value="xl">PlissÃ¨ singola XL-M01</option>
+              <option value="auto">Automatico por alerta</option>
+              <option value="simple">Plisse 8LF Simple version</option>
+              <option value="standard">Plisse singola - Estandar</option>
+              <option value="xl">Plisse singola XL-M01</option>
             </select>
           </div>
         </div>
@@ -1294,17 +1298,17 @@
         else mode = 'standard';
       }
       const modeLabels = {
-        simple: 'PlissÃ¨ 8LF Simple version',
-        standard: 'PlissÃ¨ singola - Estandar',
-        xl: 'PlissÃ¨ singola XL-M01'
+        simple: 'Plisse 8LF Simple version',
+        standard: 'Plisse singola - Estandar',
+        xl: 'Plisse singola XL-M01'
       };
       const warning = clearance < 200
-        ? 'AtenciÃ³n: revisar medida, la alerta del Excel indica que no se puede fabricar con esta relaciÃ³n.'
+        ? 'Atencion: revisar medida, la alerta del Excel indica que no se puede fabricar con esta relacion.'
         : mode === 'xl'
           ? 'Usar XL-M01 porque el ancho por pieza es mayor a 1500 mm.'
           : mode === 'simple'
-            ? 'Usar versiÃ³n simple por la alerta de perfiles y tela.'
-            : 'Medida dentro de rango estÃ¡ndar.';
+            ? 'Usar version simple por la alerta de perfiles y tela.'
+            : 'Medida dentro de rango estandar.';
       const wires = espertoWireCount(height);
       const totalWires = Number.isFinite(wires) ? wires + 2 : wires;
       const guideTop = panelWidth - 1;
@@ -1397,30 +1401,30 @@
 
       let y = pageH - 170;
       rect(margin, y - 72, pageW - margin * 2, 72);
-      text('Resultado de selecciÃ³n', margin + 10, y - 16, 12, true);
+      text('Resultado de seleccion', margin + 10, y - 16, 12, true);
       text(`Tipo de mosquitero: ${data.modeLabel}`, margin + 10, y - 34, 9, true);
       text(`Alerta / criterio: ${data.warning}`, margin + 10, y - 52, 8, false, data.clearance < 200 ? '0.65 0.05 0.05' : '0 0 0');
 
       y -= 94;
       rect(margin, y - 160, pageW - margin * 2, 160);
-      text('Datos de fabricaciÃ³n', margin + 10, y - 16, 12, true);
+      text('Datos de fabricacion', margin + 10, y - 16, 12, true);
       text(`Ancho por pieza: ${fmtMm(data.panelWidth)} mm`, margin + 10, y - 38, 9, true);
       text(`Alto: ${fmtMm(data.height)} mm`, margin + 285, y - 38, 9, true);
       text(`Hilos: ${data.wires} + 2 = ${data.totalWires}`, margin + 10, y - 58, 9);
       text(`Pliegues: ${data.folds}`, margin + 285, y - 58, 9);
-      text('SecciÃ³n de perfiles y tela', margin + 10, y - 88, 10, true);
+      text('Seccion de perfiles y tela', margin + 10, y - 88, 10, true);
       text(`Perfil pared / tirador: ${fmtMm(data.profilePull)} mm`, margin + 10, y - 108, 8);
-      text(`GuÃ­a superior: ${fmtMm(data.guideTop)} mm`, margin + 10, y - 124, 8);
-      text(`GuÃ­a inferior: ${fmtMm(data.guideBottom)} mm`, margin + 285, y - 124, 8);
-      text(`PVC porta imÃ¡n: ${fmtMm(data.pvcMagnet)} mm`, margin + 10, y - 140, 8);
+      text(`Guia superior: ${fmtMm(data.guideTop)} mm`, margin + 10, y - 124, 8);
+      text(`Guia inferior: ${fmtMm(data.guideBottom)} mm`, margin + 285, y - 124, 8);
+      text(`PVC porta iman: ${fmtMm(data.pvcMagnet)} mm`, margin + 10, y - 140, 8);
       text(`Altura de tela: ${fmtMm(data.fabricHeight)} mm`, margin + 285, y - 140, 8);
 
       y -= 182;
       rect(margin, y - 126, pageW - margin * 2, 126);
-      text('Notas para producciÃ³n', margin + 10, y - 16, 12, true);
+      text('Notas para produccion', margin + 10, y - 16, 12, true);
       text('Documento generado desde datos verdes del Excel HTFM Esperto.', margin + 10, y - 38, 8);
-      text('Las primeras reglas se basan en las tres pestaÃ±as iniciales del archivo Esperto.', margin + 10, y - 54, 8);
-      text('Siguiente ajuste: conectar validaciones exactas y desglose completo de cÃ³digos/materiales.', margin + 10, y - 70, 8);
+      text('Las primeras reglas se basan en las tres pestanas iniciales del archivo Esperto.', margin + 10, y - 54, 8);
+      text('Siguiente ajuste: conectar validaciones exactas y desglose completo de codigos/materiales.', margin + 10, y - 70, 8);
 
       const content = commands.join('\n');
       const contentObj = addObject(`<< /Length ${pdfByteLength(content)} >>\nstream\n${content}\nendstream`);
