@@ -1971,9 +1971,9 @@
 
         text(`${row.sourceNote ? 'Marco HTF' : 'Hoja HTF'}: H ${fmtMm(row.leafH)} mm / V ${fmtMm(row.leafV)} mm`, margin + 8, y - 42, 8);
         text(`Vano: ${fmtMm(row.vanoW)} x ${fmtMm(row.vanoH)} mm`, margin + 8, y - 58, 8);
-        text(`Medida final: ${fmtMm(row.mosqW)} x ${fmtMm(row.mosqH)} mm`, margin + 220, y - 58, 8);
         text(`Perfil horizontal: ${row.cutQty} pzas x ${fmtMm(row.cutW)} mm  Pos ${row.cutPosH}`, margin + 8, y - 76, 8, true);
         text(`Perfil vertical: ${row.cutQty} pzas x ${fmtMm(row.cutH)} mm  Pos ${row.cutPosV}`, margin + 8, y - 92, 8, true);
+        text(`Medida final: ${fmtMm(row.mosqW)} x ${fmtMm(row.mosqH)} mm`, margin + 330, y - 92, 8, true);
         if (row.extraLabel) text(`${row.extraLabel}: ${row.extraValue}`, margin + 8, y - 108, 8, true);
         y -= h + 8;
       });
